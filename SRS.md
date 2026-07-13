@@ -27,8 +27,7 @@
 4. [Yêu cầu phi chức năng](#4-yêu-cầu-phi-chức-năng)
    - [NFR-1: Bảo mật](#nfr-1-bảo-mật)
    - [NFR-2: Hiệu năng](#nfr-2-hiệu-năng)
-   - [NFR-3: Khả năng bảo trì và mở rộng](#nfr-3-khả-năng-bảo-trì-và-mở-rộng)
-   - [NFR-4: Khả năng triển khai](#nfr-4-khả-năng-triển-khai) ⚠️ *missing from source*
+   - [NFR-3: Khả năng bảo trì và mở rộng](#nfr-3-khả-năng-bảo-trì-và-mở-rộng)*
 
 ---
 
@@ -97,7 +96,7 @@ Công cụ nội bộ (internal tool), không public ra ngoài internet công kh
 
 ### FR-6: Nhật ký audit cho quản lý hệ thống
 
-- Ghi log bất biến cho mọi thay đổi task, dự án, và quyền truy cập (ai, làm gì, khi nào).
+- Ghi log bất biến cho mọi thay đổi task, dự án, và quyền truy cập (ai, vai trò, làm gì, khi nào).
 - Với các sự kiện auth/authorization (đăng nhập, cấp quyền, đổi vai trò), tận dụng event-sourcing sẵn có của Zitadel — mọi hành động được lưu thành event bất biến, phục vụ trực tiếp yêu cầu audit/compliance.
 
 ## 4. Yêu cầu phi chức năng
@@ -109,6 +108,7 @@ Công cụ nội bộ (internal tool), không public ra ngoài internet công kh
 - Không expose ra internet công khai: cổng quản trị Zitadel và PostgreSQL chỉ truy cập qua mạng riêng (NetBird), không mở public.
 - Secrets (token, mật khẩu DB) lưu trong secret manager, không lưu trong .env/repo.
 - Pentest và quét lỗ hổng dependency (SCA) bắt buộc trước go-live.
+- Sử dụng Spring Security để xác thực bằng JWT
 
 ### NFR-2: Hiệu năng
 
