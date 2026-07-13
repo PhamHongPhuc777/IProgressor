@@ -94,7 +94,7 @@ Công cụ nội bộ (internal tool), không public ra ngoài internet công kh
 - Phân quyền RBAC theo workspace, kiểm tra bắt buộc ở tầng API (Spring Boot), không chỉ ẩn/hiện trên giao diện.
 - NetBird (self-host, mạng riêng nội bộ) dùng chung Zitadel làm OIDC identity provider — thống nhất một hệ định danh cho cả truy cập ứng dụng lẫn truy cập mạng nội bộ (SSH, admin console, DB).
 
-### FR-6: Nhật ký audit cho quản lý hệ thống
+### FR-6: Nhật ký audit cho quản trị hệ thống
 
 - Ghi log bất biến cho mọi thay đổi task, dự án, và quyền truy cập (ai, vai trò, làm gì, khi nào).
 - Với các sự kiện auth/authorization (đăng nhập, cấp quyền, đổi vai trò), tận dụng event-sourcing sẵn có của Zitadel — mọi hành động được lưu thành event bất biến, phục vụ trực tiếp yêu cầu audit/compliance.

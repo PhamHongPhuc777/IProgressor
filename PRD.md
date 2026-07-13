@@ -50,10 +50,10 @@
 
 | Persona | Nhu cầu chính |
 |---|---|
-| Nhân viên dự án | Xem task được giao, cập nhật trạng thái, trao đổi trong ngữ cảnh task |
+| Nhân viên / Staff | Xem task được giao, cập nhật trạng thái, trao đổi trong ngữ cảnh task |
 | Trưởng phòng / PM | Lập kế hoạch dự án, chia milestone/task, phân bổ nguồn lực |
-| Giám đốc / Quản lý cấp cao | Xem tổng quan đa phòng ban, hiệu suất nhân sự, dự án có nguy cơ trễ, theo dõi rủi ro  |
-| IT Admin | Quản lý workspace, phân quyền, tích hợp hệ thống nội bộ, giàm sát được audit trail/logging |
+| Giám đốc / Leader | Xem tổng quan đa phòng ban, hiệu suất nhân sự, dự án có nguy cơ trễ, theo dõi rủi ro  |
+| Quản trị hệ thống / Admin | Quản lý workspace, phân quyền, tích hợp hệ thống nội bộ, giàm sát được audit trail/logging |
 
 ## 4. Công cụ tương đồng
 
