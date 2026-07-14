@@ -44,6 +44,8 @@ erDiagram
         uuid department_id FK
         uuid role_id FK
         string zitadel_user_id
+        string status
+        string locked_reason
     }
     PROJECT {
         uuid project_id PK
@@ -139,6 +141,8 @@ erDiagram
 | department_id | uuid | FK → DEPARTMENT |
 | role_id | uuid | FK → ROLE |
 | zitadel_user_id | string | |
+| status | string | `ACTIVE` \| `LOCKED` — cached copy of the account's lock state, synced from Zitadel via webhook/event |
+| locked_reason | string | Optional, nullable. App-local note (e.g. "resigned", "under investigation") — not identity data, so it doesn't live in Zitadel |
 
 ### PROJECT
 
@@ -261,6 +265,15 @@ erDiagram
 | **Zitadel** (self-host) | IAM / SSO | Federates each DEPARTMENT as a Zitadel Organization (org-per-department multi-tenancy); authenticates USER via OIDC |
 | **NetBird** (self-host) | Zero-trust admin VPN | Gates network-level access for USER; identity source is OIDC-linked to Zitadel |
 | **SharePoint** | Document storage | Stores ATTACHMENT content, accessed via Microsoft Graph API |
+
+## Account lock/unlock
+
+Locking a user account is treated as a **Zitadel-level action**, not an app-level one, consistent with Zitadel being the single authority for identity across both this app and NetBird (an admin locking a user should cut off app access *and* NetBird VPN access in one action, not leave a half-locked state).
+
+- The admin action goes through Zitadel's user lifecycle state (distinct from deactivation), not a flag owned by this database.
+- `USER.status` is a **read-only local cache** of that state, kept in sync via a Zitadel webhook/event listener, so the app can filter "active" users (e.g. assignee pickers, workload dashboards) without a live API call on every request. It is never the source of truth and should not be toggled directly by app code — enforcement of the actual lock happens via Zitadel (token no longer validates) and, for defense-in-depth, by checking this cached field at the Spring Security layer.
+- `USER.locked_reason` is app-local metadata Zitadel has no concept of, entered by the admin performing the lock.
+- The lock/unlock action itself is recorded as a normal `AUDIT_LOG` row (`action = 'LOCK_USER'` / `'UNLOCK_USER'`, `actor_id` = admin, `entity_type = 'USER'`, `entity_id` = target user) — no new entity needed, per FR-6's existing audit model.
 
 ---
 
