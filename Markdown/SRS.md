@@ -27,7 +27,7 @@
 4. [Yêu cầu phi chức năng](#4-yêu-cầu-phi-chức-năng)
    - [NFR-1: Bảo mật](#nfr-1-bảo-mật)
    - [NFR-2: Hiệu năng](#nfr-2-hiệu-năng)
-   - [NFR-3: Khả năng bảo trì và mở rộng](#nfr-3-khả-năng-bảo-trì-và-mở-rộng)*
+   - [NFR-3: Khả năng bảo trì và mở rộng](#nfr-3-khả-năng-bảo-trì-và-mở-rộng)
 
 ---
 
