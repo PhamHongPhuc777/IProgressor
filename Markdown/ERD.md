@@ -27,6 +27,9 @@ erDiagram
     ZITADEL ||--o{ USER : authenticates
     SHAREPOINT ||--o{ ATTACHMENT : stores
     NETBIRD ||--o{ USER : "gates access"
+    DEPARTMENT ||--o{ ACCESS_REQUEST : receives
+    USER ||--o{ ACCESS_REQUEST : reviews
+    USER ||--o| ACCESS_REQUEST : provisions
 
     DEPARTMENT {
         uuid department_id PK
@@ -46,6 +49,17 @@ erDiagram
         string zitadel_user_id
         string status
         string locked_reason
+    }
+    ACCESS_REQUEST {
+        uuid request_id PK
+        string full_name
+        string email
+        uuid department_id FK
+        string status
+        timestamp requested_at
+        uuid reviewed_by FK
+        timestamp reviewed_at
+        uuid created_user_id FK
     }
     PROJECT {
         uuid project_id PK
@@ -143,6 +157,22 @@ erDiagram
 | zitadel_user_id | string | |
 | status | string | `ACTIVE` \| `LOCKED` — cached copy of the account's lock state, synced from Zitadel via webhook/event |
 | locked_reason | string | Optional, nullable. App-local note (e.g. "resigned", "under investigation") — not identity data, so it doesn't live in Zitadel |
+
+### ACCESS_REQUEST
+
+Pre-account state: submitted before a Zitadel identity or `USER` row exists.
+
+| Field | Type | Key |
+|---|---|---|
+| request_id | uuid | PK |
+| full_name | string | |
+| email | string | |
+| department_id | uuid | FK → DEPARTMENT (requested phòng ban) |
+| status | string | `PENDING` \| `APPROVED` \| `REJECTED` |
+| requested_at | timestamp | |
+| reviewed_by | uuid | FK → USER, nullable — admin who approved/rejected |
+| reviewed_at | timestamp | nullable |
+| created_user_id | uuid | FK → USER, nullable — set once approval provisions the account |
 
 ### PROJECT
 
@@ -255,6 +285,9 @@ erDiagram
 | TAG | TASK_TAG | labels | 1 : N |
 | USER | NOTIFICATION | receives | 1 : N |
 | USER | AUDIT_LOG | performs | 1 : N |
+| DEPARTMENT | ACCESS_REQUEST | receives | 1 : N |
+| USER | ACCESS_REQUEST | reviews (admin) | 1 : N |
+| USER | ACCESS_REQUEST | provisions (created account) | 1 : 0..1 |
 
 `PROJECT_MEMBER` and `TASK_TAG` are association/join tables — together they express the underlying many-to-many relationships (PROJECT↔USER and TASK↔TAG respectively).
 
@@ -274,6 +307,16 @@ Locking a user account is treated as a **Zitadel-level action**, not an app-leve
 - `USER.status` is a **read-only local cache** of that state, kept in sync via a Zitadel webhook/event listener, so the app can filter "active" users (e.g. assignee pickers, workload dashboards) without a live API call on every request. It is never the source of truth and should not be toggled directly by app code — enforcement of the actual lock happens via Zitadel (token no longer validates) and, for defense-in-depth, by checking this cached field at the Spring Security layer.
 - `USER.locked_reason` is app-local metadata Zitadel has no concept of, entered by the admin performing the lock.
 - The lock/unlock action itself is recorded as a normal `AUDIT_LOG` row (`action = 'LOCK_USER'` / `'UNLOCK_USER'`, `actor_id` = admin, `entity_type = 'USER'`, `entity_id` = target user) — no new entity needed, per FR-6's existing audit model.
+
+## Access request / onboarding flow
+
+Someone requesting access isn't a `USER` yet — no `zitadel_user_id`, no department membership, no role. `ACCESS_REQUEST` models that pre-account state, separate from `USER` for that reason.
+
+- Submitted with just `full_name`, `email`, and the `department_id` being requested — no Zitadel identity exists yet at this point.
+- An admin (`reviewed_by`) approves or rejects. Rejecting simply closes the row (`status = REJECTED`); nothing downstream happens.
+- Approving is what actually provisions the account: it creates/invites the Zitadel identity under the requested department's Organization, then creates the matching `USER` row (`department_id`, a default `role_id`, `zitadel_user_id`). `created_user_id` links the request back to that new `USER` row so there's a record of what it became.
+- RBAC boundary to enforce at the API layer: an admin should only see and act on requests for the department(s) they administer (per FR-1's workspace isolation) — not requests aimed at other departments.
+- Like account locking, the approve/reject decision is itself worth an `AUDIT_LOG` row (`action = 'APPROVE_ACCESS_REQUEST'` / `'REJECT_ACCESS_REQUEST'`), since it's a permission-granting event under FR-6.
 
 ---
 
