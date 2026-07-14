@@ -167,7 +167,7 @@ Pre-account state: submitted before a Zitadel identity or `USER` row exists.
 | request_id | uuid | PK |
 | full_name | string | |
 | email | string | |
-| department_id | uuid | FK → DEPARTMENT (requested phòng ban) |
+| department_id | uuid | FK → DEPARTMENT (requested) |
 | status | string | `PENDING` \| `APPROVED` \| `REJECTED` |
 | requested_at | timestamp | |
 | reviewed_by | uuid | FK → USER, nullable — admin who approved/rejected |
