@@ -1,8 +1,6 @@
 # Entity Relationship Diagram — Project Management Web App
 
 > Converted from `Entity Relationship Diagram - Project Management Web App.drawio` for repo review/reference. Diagram is redrawn as a [Mermaid](https://mermaid.js.org/syntax/entityRelationshipDiagram.html) `erDiagram`, which GitHub renders natively in Markdown — no external viewer needed. Entity names, field names, and PK/FK markers are unchanged from the source `.drawio` file, **except for the additions below**.
->
-> **Revision note (v2):** updated after cross-referencing `Project_Management_Functional_Requirements.pdf` against this diagram, `PRD.md`, and `SRS.md`. Six changes were made — four new entities (`MILESTONE`, `PERMISSION`, `ROLE_PERMISSION`, `BROADCAST_MESSAGE`) and additions to three existing ones (`TASK`, `USER`, `ACCESS_REQUEST`) — to close gaps the FR table surfaced that weren't representable in v1. Each is explained in its own section below; nothing from v1 was removed or renamed.
 
 ## Diagram
 
