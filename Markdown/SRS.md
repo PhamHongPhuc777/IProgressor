@@ -1,12 +1,10 @@
 # Software Requirements Specification (SRS)
 
 **Tên dự án:** Hệ thống Quản lý Dự án Nội bộ
-**Người soạn: Hồng Phúc**
+**Người soạn:**
 **Ngày soạn:** 09/07/2026
 
 > Converted from `Software Requirement Specification - Project Managment Web App.pdf` for repo review/reference. Content is unedited from the source PDF (only reformatted to Markdown).
->
-> **Reviewer note:** the source document's table of contents lists a "NFR-4: Khả năng triển khai" section, but the PDF export shows `Error! Bookmark not defined.` and the section itself is missing from the body — the deployability NFR was never actually written. Flagged here as an open gap for the author to fill in, not something lost in conversion.
 
 ## Table of Contents
 

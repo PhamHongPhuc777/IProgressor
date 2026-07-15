@@ -1,7 +1,7 @@
 # Project Requirement Document (PRD)
 
 **Tên dự án:** Hệ thống Quản lý Dự án Nội bộ
-**Người soạn: Hồng Phúc**
+**Người soạn:**
 **Ngày soạn:** 09/07/2026
 
 > Converted from `Project Requirement Document - Project Managment Web App.pdf` for repo review/reference. Content is unedited from the source PDF (only reformatted to Markdown).
