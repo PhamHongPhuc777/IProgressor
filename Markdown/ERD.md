@@ -1,8 +1,12 @@
-# Entity Relationship Diagram — Project Management Web App
+# Sơ đồ Quan hệ Thực thể (ERD) — Ứng dụng Web Quản lý Dự án
 
-> Converted from `Entity Relationship Diagram - Project Management Web App.drawio` for repo review/reference. Diagram is redrawn as a [Mermaid](https://mermaid.js.org/syntax/entityRelationshipDiagram.html) `erDiagram`, which GitHub renders natively in Markdown — no external viewer needed. Entity names, field names, and PK/FK markers are unchanged from the source `.drawio` file, **except for the additions below**.
+> Bản dịch tiếng Việt của `ERD.md`. Tên thực thể (entity), tên trường (field), và ký hiệu khóa chính/khóa ngoại (PK/FK) được **giữ nguyên bằng tiếng Anh** vì đây là định danh trong schema/code, không nên dịch. Phần lời giải thích, tiêu đề mục, và mô tả được dịch sang tiếng Việt.
+>
+> **Ghi chú phiên bản (v2):** cập nhật sau khi đối chiếu `Project_Management_Functional_Requirements.pdf` với sơ đồ này, `PRD.md`, và `SRS.md`. Có 6 thay đổi — 4 thực thể mới (`MILESTONE`, `PERMISSION`, `ROLE_PERMISSION`, `BROADCAST_MESSAGE`) và bổ sung cho 3 thực thể đã có (`TASK`, `USER`, `ACCESS_REQUEST`) — để lấp các khoảng trống mà bảng FR phát hiện nhưng bản v1 chưa thể hiện được. Mỗi thay đổi được giải thích trong mục riêng bên dưới; không có gì ở v1 bị xóa hoặc đổi tên.
 
-## Diagram
+## Sơ đồ (Diagram)
+
+Khối mã Mermaid dưới đây được **giữ nguyên bằng tiếng Anh** — đây là code render trực tiếp trên GitHub, dịch nhãn quan hệ có thể làm rối sơ đồ mà không tăng thêm giá trị.
 
 ```mermaid
 erDiagram
@@ -165,28 +169,28 @@ erDiagram
     }
 ```
 
-`ZITADEL`, `NETBIRD`, and `SHAREPOINT` are external systems (no owned schema in this database) — see [External systems](#external-systems) below for their role.
+`ZITADEL`, `NETBIRD`, và `SHAREPOINT` là hệ thống bên ngoài (không có schema riêng trong database này) — xem [Hệ thống bên ngoài](#hệ-thống-bên-ngoài) bên dưới.
 
-## Entities & fields
+## Thực thể & các trường
 
-### DEPARTMENT
+### DEPARTMENT (Phòng ban)
 
-| Field | Type | Key |
+| Trường | Kiểu | Khóa |
 |---|---|---|
 | department_id | uuid | PK |
 | name | string | |
 | zitadel_org_id | string | |
 
-### ROLE
+### ROLE (Vai trò)
 
-| Field | Type | Key |
+| Trường | Kiểu | Khóa |
 |---|---|---|
 | role_id | uuid | PK |
 | name | string | |
 
-### USER
+### USER (Người dùng)
 
-| Field | Type | Key |
+| Trường | Kiểu | Khóa |
 |---|---|---|
 | user_id | uuid | PK |
 | full_name | string | |
@@ -194,33 +198,33 @@ erDiagram
 | department_id | uuid | FK → DEPARTMENT |
 | role_id | uuid | FK → ROLE |
 | zitadel_user_id | string | |
-| status | string | `ACTIVE` \| `LOCKED` — cached copy of the account's lock state, synced from Zitadel via webhook/event |
-| locked_reason | string | Optional, nullable. App-local note (e.g. "resigned", "under investigation") — not identity data, so it doesn't live in Zitadel |
-| avatar_url | string | Nullable. Profile avatar — supports "Change Profile Avatar" (all roles) |
-| netbird_connected | boolean | Cached, read-only. Synced from NetBird via webhook/poll — see [NetBird connection status](#netbird-connection-status) |
-| netbird_last_seen | timestamp | Nullable. Last time NetBird reported this user as connected |
+| status | string | `ACTIVE` \| `LOCKED` — bản sao cache của trạng thái khóa tài khoản, đồng bộ từ Zitadel qua webhook/event |
+| locked_reason | string | Tùy chọn, có thể null. Ghi chú nội bộ app (vd. "đã nghỉ việc", "đang bị điều tra") — không phải dữ liệu định danh nên không lưu ở Zitadel |
+| avatar_url | string | Có thể null. Ảnh đại diện — hỗ trợ tính năng "Đổi ảnh đại diện" (mọi vai trò) |
+| netbird_connected | boolean | Cache, chỉ đọc. Đồng bộ từ NetBird qua webhook/poll — xem [Trạng thái kết nối NetBird](#trạng-thái-kết-nối-netbird) |
+| netbird_last_seen | timestamp | Có thể null. Lần cuối NetBird ghi nhận user này đang kết nối |
 
-### ACCESS_REQUEST
+### ACCESS_REQUEST (Yêu cầu cấp quyền truy cập)
 
-Pre-account state **or** re-request after lockout — see [Access request / onboarding flow](#access-request--onboarding-flow).
+Trạng thái trước-khi-có-tài-khoản **hoặc** yêu cầu lại sau khi bị khóa — xem [Luồng yêu cầu truy cập / onboarding](#luồng-yêu-cầu-truy-cập--onboarding).
 
-| Field | Type | Key |
+| Trường | Kiểu | Khóa |
 |---|---|---|
 | request_id | uuid | PK |
-| request_type | string | `NEW_ACCOUNT` (default) \| `UNLOCK_REQUEST` |
+| request_type | string | `NEW_ACCOUNT` (mặc định) \| `UNLOCK_REQUEST` |
 | full_name | string | |
 | email | string | |
-| department_id | uuid | FK → DEPARTMENT (requested) |
-| existing_user_id | uuid | FK → USER, nullable — set when `request_type = UNLOCK_REQUEST`, links to the already-existing locked account |
+| department_id | uuid | FK → DEPARTMENT (phòng ban được yêu cầu) |
+| existing_user_id | uuid | FK → USER, có thể null — được set khi `request_type = UNLOCK_REQUEST`, liên kết đến tài khoản đang bị khóa |
 | status | string | `PENDING` \| `APPROVED` \| `REJECTED` |
 | requested_at | timestamp | |
-| reviewed_by | uuid | FK → USER, nullable — admin who approved/rejected |
-| reviewed_at | timestamp | nullable |
-| created_user_id | uuid | FK → USER, nullable — set once approval provisions the account (NEW_ACCOUNT flow only) |
+| reviewed_by | uuid | FK → USER, có thể null — admin đã duyệt/từ chối |
+| reviewed_at | timestamp | có thể null |
+| created_user_id | uuid | FK → USER, có thể null — được set khi duyệt xong và tạo tài khoản (chỉ áp dụng luồng NEW_ACCOUNT) |
 
-### PROJECT
+### PROJECT (Dự án)
 
-| Field | Type | Key |
+| Trường | Kiểu | Khóa |
 |---|---|---|
 | project_id | uuid | PK |
 | name | string | |
@@ -230,17 +234,17 @@ Pre-account state **or** re-request after lockout — see [Access request / onbo
 | start_date | date | |
 | end_date | date | |
 
-### PROJECT_MEMBER *(join table: PROJECT ↔ USER)*
+### PROJECT_MEMBER *(bảng nối: PROJECT ↔ USER)*
 
-| Field | Type | Key |
+| Trường | Kiểu | Khóa |
 |---|---|---|
 | project_id | uuid | FK → PROJECT |
 | user_id | uuid | FK → USER |
 | project_role | string | |
 
-### MILESTONE
+### MILESTONE (Cột mốc)
 
-| Field | Type | Key |
+| Trường | Kiểu | Khóa |
 |---|---|---|
 | milestone_id | uuid | PK |
 | project_id | uuid | FK → PROJECT |
@@ -248,25 +252,25 @@ Pre-account state **or** re-request after lockout — see [Access request / onbo
 | due_date | date | |
 | status | string | |
 
-### TASK
+### TASK (Công việc)
 
-| Field | Type | Key |
+| Trường | Kiểu | Khóa |
 |---|---|---|
 | task_id | uuid | PK |
 | project_id | uuid | FK → PROJECT |
-| milestone_id | uuid | FK → MILESTONE, nullable — a task may belong to a milestone or attach directly to the project |
-| parent_task_id | uuid | FK → TASK (self, for subtasks) |
+| milestone_id | uuid | FK → MILESTONE, có thể null — task có thể thuộc một milestone hoặc gắn trực tiếp vào project |
+| parent_task_id | uuid | FK → TASK (tự tham chiếu, dùng cho subtask) |
 | assignee_id | uuid | FK → USER |
 | title | string | |
-| description | text | Nullable. Free-text task detail, distinct from `title` — supports "Update Task's Description" (PM/Admin) |
-| start_date | date | Nullable. Combined with `due_date`, defines the bar rendered in the Gantt view — see [Task scheduling (Gantt support)](#task-scheduling-gantt-support) |
+| description | text | Có thể null. Nội dung mô tả chi tiết task, khác với `title` — hỗ trợ tính năng "Cập nhật mô tả Task" (PM/Admin) |
+| start_date | date | Có thể null. Kết hợp với `due_date` để xác định thanh (bar) hiển thị trong Gantt view — xem [Lên lịch Task (hỗ trợ Gantt)](#lên-lịch-task-hỗ-trợ-gantt) |
 | due_date | date | |
 | status | string | |
 | priority | string | |
 
-### COMMENT
+### COMMENT (Bình luận)
 
-| Field | Type | Key |
+| Trường | Kiểu | Khóa |
 |---|---|---|
 | comment_id | uuid | PK |
 | task_id | uuid | FK → TASK |
@@ -274,9 +278,9 @@ Pre-account state **or** re-request after lockout — see [Access request / onbo
 | content | text | |
 | created_at | timestamp | |
 
-### ATTACHMENT
+### ATTACHMENT (Tệp đính kèm)
 
-| Field | Type | Key |
+| Trường | Kiểu | Khóa |
 |---|---|---|
 | attachment_id | uuid | PK |
 | task_id | uuid | FK → TASK |
@@ -285,34 +289,34 @@ Pre-account state **or** re-request after lockout — see [Access request / onbo
 | sharepoint_item_id | string | |
 | url | string | |
 
-### TAG
+### TAG (Thẻ gắn nhãn)
 
-| Field | Type | Key |
+| Trường | Kiểu | Khóa |
 |---|---|---|
 | tag_id | uuid | PK |
 | name | string | |
 
-### TASK_TAG *(join table: TASK ↔ TAG)*
+### TASK_TAG *(bảng nối: TASK ↔ TAG)*
 
-| Field | Type | Key |
+| Trường | Kiểu | Khóa |
 |---|---|---|
 | task_id | uuid | FK → TASK |
 | tag_id | uuid | FK → TAG |
 
-### NOTIFICATION
+### NOTIFICATION (Thông báo)
 
-| Field | Type | Key |
+| Trường | Kiểu | Khóa |
 |---|---|---|
 | notification_id | uuid | PK |
 | user_id | uuid | FK → USER |
-| entity_type | string | Includes `BROADCAST_MESSAGE` alongside existing types (`TASK`, `COMMENT`, etc.) |
-| entity_id | uuid | Polymorphic — no DB-level FK constraint, same as v1 |
+| entity_type | string | Bao gồm cả `BROADCAST_MESSAGE` bên cạnh các loại đã có (`TASK`, `COMMENT`, v.v.) |
+| entity_id | uuid | Đa hình (polymorphic) — không có ràng buộc FK ở tầng DB, giống v1 |
 | is_read | boolean | |
 | created_at | timestamp | |
 
-### AUDIT_LOG
+### AUDIT_LOG (Nhật ký hoạt động)
 
-| Field | Type | Key |
+| Trường | Kiểu | Khóa |
 |---|---|---|
 | audit_id | uuid | PK |
 | actor_id | uuid | FK → USER |
@@ -321,139 +325,155 @@ Pre-account state **or** re-request after lockout — see [Access request / onbo
 | entity_id | uuid | |
 | created_at | timestamp | |
 
-### PERMISSION
+### PERMISSION (Quyền)
 
-Seed data mirrors the ~25 rows of the Functional Requirements table (e.g. `task.status.update`, `task.crud`, `project.crud`, `audit_log.view`, `user.role.change` …).
+Dữ liệu khởi tạo (seed data) phản ánh khoảng 25 dòng trong bảng Functional Requirements (vd. `task.status.update`, `task.crud`, `project.crud`, `audit_log.view`, `user.role.change`…).
 
-| Field | Type | Key |
+| Trường | Kiểu | Khóa |
 |---|---|---|
 | permission_id | uuid | PK |
-| key | string | Stable machine-readable code, e.g. `task.status.update` |
-| description | string | Human-readable label, e.g. "Update Task's Status" |
+| key | string | Mã định danh ổn định, máy đọc được, vd. `task.status.update` |
+| description | string | Nhãn dễ đọc cho người dùng, vd. "Update Task's Status" |
 
-### ROLE_PERMISSION *(join table: ROLE ↔ PERMISSION)*
+### ROLE_PERMISSION *(bảng nối: ROLE ↔ PERMISSION)*
 
-| Field | Type | Key |
+| Trường | Kiểu | Khóa |
 |---|---|---|
 | role_id | uuid | FK → ROLE |
 | permission_id | uuid | FK → PERMISSION |
 
-### BROADCAST_MESSAGE
+### BROADCAST_MESSAGE (Thông báo toàn hệ thống)
 
-| Field | Type | Key |
+| Trường | Kiểu | Khóa |
 |---|---|---|
 | broadcast_id | uuid | PK |
-| department_id | uuid | FK → DEPARTMENT — the workspace the message targets |
+| department_id | uuid | FK → DEPARTMENT — workspace mà thông báo nhắm đến |
 | author_id | uuid | FK → USER (Leader) |
 | content | text | |
 | created_at | timestamp | |
 
-## Relationships
+## Quan hệ (Relationships)
 
-| From | To | Relationship | Cardinality |
+| Từ | Đến | Quan hệ | Số lượng |
 |---|---|---|---|
-| DEPARTMENT | USER | employs | 1 : N |
-| DEPARTMENT | PROJECT | owns | 1 : N |
-| ROLE | USER | grants | 1 : N |
-| USER | PROJECT | manages (owner) | 1 : N |
-| PROJECT | PROJECT_MEMBER | includes | 1 : N |
-| USER | PROJECT_MEMBER | joins | 1 : N |
-| PROJECT | MILESTONE | broken into | 1 : N |
-| MILESTONE | TASK | groups | 1 : N |
-| PROJECT | TASK | contains | 1 : N |
-| TASK | TASK | has subtask (self-reference via parent_task_id) | 1 : N |
-| USER | TASK | assigned to | 1 : N |
-| TASK | COMMENT | has | 1 : N |
-| USER | COMMENT | writes | 1 : N |
-| TASK | ATTACHMENT | has | 1 : N |
-| PROJECT | ATTACHMENT | has | 1 : N |
-| TASK | TASK_TAG | tagged | 1 : N |
-| TAG | TASK_TAG | labels | 1 : N |
-| USER | NOTIFICATION | receives | 1 : N |
-| USER | AUDIT_LOG | performs | 1 : N |
-| ROLE | ROLE_PERMISSION | has | 1 : N |
-| PERMISSION | ROLE_PERMISSION | granted via | 1 : N |
-| USER | BROADCAST_MESSAGE | authors | 1 : N |
-| DEPARTMENT | BROADCAST_MESSAGE | targeted at | 1 : N |
-| BROADCAST_MESSAGE | NOTIFICATION | fans out to (polymorphic, via entity_type/entity_id) | 1 : N |
-| DEPARTMENT | ACCESS_REQUEST | receives | 1 : N |
-| USER | ACCESS_REQUEST | reviews (admin) | 1 : N |
-| USER | ACCESS_REQUEST | provisions (created account) | 1 : 0..1 |
-| USER | ACCESS_REQUEST | re-requests via (locked account, UNLOCK_REQUEST) | 1 : 0..N |
+| DEPARTMENT | USER | quản lý nhân sự | 1 : N |
+| DEPARTMENT | PROJECT | sở hữu | 1 : N |
+| ROLE | USER | cấp vai trò | 1 : N |
+| USER | PROJECT | quản lý (chủ dự án) | 1 : N |
+| PROJECT | PROJECT_MEMBER | bao gồm | 1 : N |
+| USER | PROJECT_MEMBER | tham gia | 1 : N |
+| PROJECT | MILESTONE | chia thành | 1 : N |
+| MILESTONE | TASK | nhóm các | 1 : N |
+| PROJECT | TASK | chứa | 1 : N |
+| TASK | TASK | có subtask (tự tham chiếu qua parent_task_id) | 1 : N |
+| USER | TASK | được giao cho | 1 : N |
+| TASK | COMMENT | có | 1 : N |
+| USER | COMMENT | viết | 1 : N |
+| TASK | ATTACHMENT | có | 1 : N |
+| PROJECT | ATTACHMENT | có | 1 : N |
+| TASK | TASK_TAG | được gắn thẻ | 1 : N |
+| TAG | TASK_TAG | gắn nhãn | 1 : N |
+| USER | NOTIFICATION | nhận | 1 : N |
+| USER | AUDIT_LOG | thực hiện | 1 : N |
+| ROLE | ROLE_PERMISSION | có | 1 : N |
+| PERMISSION | ROLE_PERMISSION | được cấp qua | 1 : N |
+| USER | BROADCAST_MESSAGE | là tác giả | 1 : N |
+| DEPARTMENT | BROADCAST_MESSAGE | được nhắm đến | 1 : N |
+| BROADCAST_MESSAGE | NOTIFICATION | phân phối đến (đa hình, qua entity_type/entity_id) | 1 : N |
+| DEPARTMENT | ACCESS_REQUEST | nhận | 1 : N |
+| USER | ACCESS_REQUEST | duyệt (admin) | 1 : N |
+| USER | ACCESS_REQUEST | cấp tài khoản (tạo tài khoản) | 1 : 0..1 |
+| USER | ACCESS_REQUEST | yêu cầu lại qua (tài khoản bị khóa, UNLOCK_REQUEST) | 1 : 0..N |
 
-`PROJECT_MEMBER`, `TASK_TAG`, and `ROLE_PERMISSION` are association/join tables — together they express the underlying many-to-many relationships (PROJECT↔USER, TASK↔TAG, and ROLE↔PERMISSION respectively).
+`PROJECT_MEMBER`, `TASK_TAG`, và `ROLE_PERMISSION` là các bảng nối (association/join table) — thể hiện quan hệ nhiều-nhiều (many-to-many) tương ứng: PROJECT↔USER, TASK↔TAG, và ROLE↔PERMISSION.
 
-## External systems
+## Hệ thống bên ngoài
 
-| System | Role | Integration |
+| Hệ thống | Vai trò | Tích hợp |
 |---|---|---|
-| **Zitadel** (self-host) | IAM / SSO | Federates each DEPARTMENT as a Zitadel Organization (org-per-department multi-tenancy); authenticates USER via OIDC |
-| **NetBird** (self-host) | Zero-trust admin VPN | Gates network-level access for USER; identity source is OIDC-linked to Zitadel |
-| **SharePoint** | Document storage | Stores ATTACHMENT content, accessed via Microsoft Graph API |
+| **Zitadel** (self-host) | IAM / SSO | Ánh xạ mỗi DEPARTMENT thành một Zitadel Organization (mô hình multi-tenant theo phòng ban); xác thực USER qua OIDC |
+| **NetBird** (self-host) | VPN quản trị zero-trust | Kiểm soát truy cập tầng mạng cho USER; nguồn định danh liên kết OIDC với Zitadel |
+| **SharePoint** | Lưu trữ tài liệu | Lưu nội dung ATTACHMENT, truy cập qua Microsoft Graph API |
 
-## Account lock/unlock
+## Khóa/Mở khóa tài khoản
 
-Locking a user account is treated as a **Zitadel-level action**, not an app-level one, consistent with Zitadel being the single authority for identity across both this app and NetBird (an admin locking a user should cut off app access *and* NetBird VPN access in one action, not leave a half-locked state).
+Việc khóa tài khoản người dùng được xử lý ở **tầng Zitadel**, không phải ở tầng app, vì Zitadel là nguồn định danh duy nhất cho cả app này lẫn NetBird (khi admin khóa một user, cả quyền truy cập app *và* quyền truy cập VPN NetBird đều phải bị chặn cùng lúc, không để tình trạng "khóa nửa vời").
 
-- The admin action goes through Zitadel's user lifecycle state (distinct from deactivation), not a flag owned by this database.
-- `USER.status` is a **read-only local cache** of that state, kept in sync via a Zitadel webhook/event listener, so the app can filter "active" users (e.g. assignee pickers, workload dashboards) without a live API call on every request. It is never the source of truth and should not be toggled directly by app code — enforcement of the actual lock happens via Zitadel (token no longer validates) and, for defense-in-depth, by checking this cached field at the Spring Security layer.
-- `USER.locked_reason` is app-local metadata Zitadel has no concept of, entered by the admin performing the lock.
-- The lock/unlock action itself is recorded as a normal `AUDIT_LOG` row (`action = 'LOCK_USER'` / `'UNLOCK_USER'`, `actor_id` = admin, `entity_type = 'USER'`, `entity_id` = target user) — no new entity needed, per FR-6's existing audit model.
-- A locked user asking to be reinstated does so through `ACCESS_REQUEST` with `request_type = UNLOCK_REQUEST` and `existing_user_id` set — see below.
+- Hành động khóa của admin đi qua state vòng đời tài khoản của Zitadel (khác với deactivation), không phải một cờ (flag) thuộc database này.
+- `USER.status` là **bản cache chỉ đọc** của trạng thái đó, được đồng bộ qua webhook/event của Zitadel, để app có thể lọc user "đang hoạt động" (vd. chọn assignee, dashboard workload) mà không cần gọi API trực tiếp mỗi lần. Đây không bao giờ là nguồn dữ liệu gốc (source of truth) và không được app tự ý thay đổi trực tiếp — việc khóa thực sự diễn ra ở Zitadel (token không còn hợp lệ) và, để phòng vệ nhiều lớp (defense-in-depth), kiểm tra thêm trường cache này ở tầng Spring Security.
+- `USER.locked_reason` là metadata nội bộ app mà Zitadel không có khái niệm, do admin thực hiện khóa nhập vào.
+- Hành động khóa/mở khóa được ghi lại như một dòng `AUDIT_LOG` bình thường (`action = 'LOCK_USER'` / `'UNLOCK_USER'`, `actor_id` = admin, `entity_type = 'USER'`, `entity_id` = user bị tác động) — không cần thực thể mới, theo đúng mô hình audit sẵn có của FR-6.
+- Một user bị khóa muốn được phục hồi sẽ thực hiện qua `ACCESS_REQUEST` với `request_type = UNLOCK_REQUEST` và `existing_user_id` được set — xem bên dưới.
 
-## NetBird connection status
+## Trạng thái kết nối NetBird
 
-The FR table's Admin capability "View which account is accessed correctly with NetBird" needs a queryable per-user state, which v1 didn't model (NetBird was only a network-level gate, not a data source).
+Tính năng "Xem tài khoản nào đang kết nối đúng qua NetBird" của Admin (trong bảng FR) cần một trạng thái có thể truy vấn theo từng user, điều mà v1 chưa mô hình hóa (NetBird trước đó chỉ là cổng chặn ở tầng mạng, không phải nguồn dữ liệu).
 
-- `USER.netbird_connected` and `USER.netbird_last_seen` are **read-only local caches**, following the exact same pattern as `USER.status` — synced via a NetBird webhook or scheduled poll, never written directly by app code.
-- This is purely informational for the Admin UI; it does not itself enforce access — the actual gate is still NetBird's own network policy, OIDC-linked to Zitadel.
+- `USER.netbird_connected` và `USER.netbird_last_seen` là **bản cache chỉ đọc**, theo đúng khuôn mẫu như `USER.status` — đồng bộ qua webhook hoặc poll định kỳ từ NetBird, không bao giờ được app ghi trực tiếp.
+- Đây chỉ mang tính thông tin cho giao diện Admin; bản thân nó không thực thi việc kiểm soát truy cập — cổng chặn thực sự vẫn là chính sách mạng của NetBird, liên kết OIDC với Zitadel.
 
-## Authority matrix (RBAC permissions)
+## Ma trận phân quyền (RBAC permissions)
 
-The FR table's Admin capability "Adjust Ability Authority" / "Authority Matrix" implies permissions are **admin-editable at runtime**, not hardcoded — so `ROLE` alone (a flat `{role_id, name}` label) isn't sufficient on its own.
+Tính năng "Adjust Ability Authority" / "Authority Matrix" của Admin trong bảng FR ngụ ý quyền hạn phải **chỉnh sửa được lúc runtime bởi admin**, không hardcode — nên `ROLE` (chỉ là nhãn phẳng `{role_id, name}`) là chưa đủ.
 
-- `PERMISSION` is a catalog table, one row per capability in the FR document (e.g. `task.status.update`, `project.crud`, `audit_log.export`) — roughly 25 rows at MVP, matching the FR table's feature list one-to-one.
-- `ROLE_PERMISSION` is the join table: a row's presence means that role has that permission. Removing/adding rows *is* the "Authority Matrix" the admin edits.
-- The four `ROLE` rows (Staff, PM, Leader, Admin) stay fixed as named roles; what's editable is which permissions attach to each, not the roles themselves.
-- Every permission-gated endpoint should resolve authorization by joining `USER → ROLE → ROLE_PERMISSION → PERMISSION`, not by hardcoding role-name checks in code — otherwise the matrix becomes cosmetic.
-- Adjusting the matrix is a permission-granting event and should itself write an `AUDIT_LOG` row (`action = 'UPDATE_ROLE_PERMISSION'`), consistent with FR-6.
-- **Open design choice, not yet decided:** this assumes admin-editable permissions (Option B from the prior review). If the simpler, hardcoded-role approach (Option A) is preferred instead for MVP, `PERMISSION`/`ROLE_PERMISSION` can be dropped and role checks moved into `@PreAuthorize` annotations directly — worth confirming before the auth layer is built, since this is expensive to change direction on later.
+- `PERMISSION` là bảng danh mục, mỗi dòng tương ứng một quyền trong tài liệu FR (vd. `task.status.update`, `project.crud`, `audit_log.export`) — khoảng 25 dòng ở giai đoạn MVP, khớp 1-1 với danh sách tính năng trong bảng FR.
+- `ROLE_PERMISSION` là bảng nối: sự tồn tại của một dòng nghĩa là vai trò đó có quyền tương ứng. Việc thêm/xóa dòng *chính là* "Ma trận phân quyền" mà admin chỉnh sửa.
+- 4 dòng `ROLE` (Staff, PM, Leader, Admin) giữ cố định như các vai trò được đặt tên; phần có thể chỉnh sửa là quyền nào gắn với vai trò nào, không phải bản thân các vai trò.
+- Mọi endpoint có kiểm soát quyền nên xác định phân quyền bằng cách join `USER → ROLE → ROLE_PERMISSION → PERMISSION`, không hardcode kiểm tra theo tên vai trò trong code — nếu không, ma trận chỉ mang tính hình thức.
+- Điều chỉnh ma trận là một sự kiện cấp quyền và bản thân nó nên ghi một dòng `AUDIT_LOG` (`action = 'UPDATE_ROLE_PERMISSION'`), phù hợp với FR-6.
+- **Đã xác nhận hướng thiết kế:** đây là Phương án B (ma trận chỉnh sửa được bởi admin) — khớp với mockup "Ma trận phân quyền" đã được xây dựng, với dòng Admin bị khóa/không thể chỉnh sửa cả ở client lẫn server.
 
-## Milestones
+## Milestone (Cột mốc)
 
-PRD (5.3) and SRS (FR-3) both describe projects breaking into milestones before tasks, which v1's diagram didn't capture — `TASK` only self-referenced for subtasks, with no grouping layer above it.
+PRD (5.3) và SRS (FR-3) đều mô tả dự án được chia thành milestone trước khi chia thành task, điều mà sơ đồ v1 chưa thể hiện — `TASK` trước đó chỉ tự tham chiếu để làm subtask, không có tầng nhóm nào ở trên.
 
-- `MILESTONE` sits between `PROJECT` and `TASK`: one project has many milestones, one milestone has many tasks.
-- `TASK.milestone_id` is **nullable** — a task can belong to a milestone, or attach directly to the project without one, so simple projects aren't forced to invent artificial milestones.
-- `TASK.project_id` is kept even though `milestone_id` could imply it transitively, since direct project-level task queries (e.g. "all tasks in this project" for the Kanban/List/Calendar views) are common enough to want a denormalized, indexable path rather than always joining through `MILESTONE`.
+- `MILESTONE` nằm giữa `PROJECT` và `TASK`: một project có nhiều milestone, một milestone có nhiều task.
+- `TASK.milestone_id` **có thể null** — một task có thể thuộc một milestone, hoặc gắn trực tiếp vào project mà không cần milestone, để các project đơn giản không bị ép phải tạo milestone giả.
+- `TASK.project_id` vẫn được giữ dù có thể suy ra gián tiếp qua `milestone_id`, vì các truy vấn task ở cấp project (vd. "tất cả task trong project này" cho các view Kanban/List/Calendar) đủ phổ biến để cần một đường truy vấn trực tiếp, có index, thay vì luôn phải join qua `MILESTONE`.
 
-## Task scheduling (Gantt support)
+## Lên lịch Task (hỗ trợ Gantt)
 
-Of the four project views (Kanban, List, Gantt, Calendar), three render the same task data differently at the client — no schema changes needed for those. Gantt is the exception: a Gantt bar needs a date *range* to draw its width, but v1's `TASK` only had `due_date`, a single point in time.
+Trong 4 kiểu view của project (Kanban, List, Gantt, Calendar), 3 kiểu render cùng một dữ liệu task theo cách khác nhau ở phía client — không cần thay đổi schema cho các view đó. Gantt là ngoại lệ: một thanh (bar) trong Gantt cần một *khoảng* ngày để vẽ độ rộng, nhưng `TASK` ở v1 chỉ có `due_date` — một mốc thời gian đơn.
 
-- `TASK.start_date` (nullable) was added so the client can compute bar position/width as `[start_date, due_date]`.
-- `MILESTONE` intentionally keeps only `due_date` — milestones are conventionally rendered as point-in-time markers (diamonds) in a Gantt chart, not bars, so no range field is needed there.
-- If `start_date` is null (task has no defined start), the client's fallback rendering (e.g. a zero-width marker, or falling back to `due_date` for both ends) is a display concern, not a schema one.
+- `TASK.start_date` (có thể null) được thêm vào để client tính được vị trí/độ rộng thanh Gantt theo `[start_date, due_date]`.
+- `MILESTONE` chủ ý chỉ giữ `due_date` — milestone theo quy ước thường được vẽ như một điểm mốc thời gian (hình thoi) trong Gantt chart, không phải một thanh, nên không cần trường khoảng ngày.
+- Nếu `start_date` là null (task chưa có ngày bắt đầu xác định), cách hiển thị dự phòng ở client (vd. một điểm không có độ rộng, hoặc lấy `due_date` cho cả hai đầu) là vấn đề hiển thị, không phải vấn đề schema.
 
-## Broadcast messaging
+## Thông báo toàn hệ thống (Broadcast messaging)
 
-The FR document gives Leader a capability with no v1 equivalent: sending a global message to an entire workspace, surfaced in each member's notification box.
+Tài liệu FR trao cho Leader một tính năng chưa có ở v1: gửi thông báo toàn workspace, hiển thị trong hộp thông báo của từng thành viên.
 
-- `BROADCAST_MESSAGE` is a lightweight table: one row per message, scoped to a `department_id` (the "workplace" being messaged) and authored by a `USER` (a Leader).
-- Delivery reuses the existing polymorphic `NOTIFICATION` pattern already used for tasks/comments — one `NOTIFICATION` row is fanned out per department member, with `entity_type = 'BROADCAST_MESSAGE'` and `entity_id = broadcast_id`. No new delivery mechanism was needed, just a source-of-truth row to point at (and to audit/export later if needed) rather than duplicating message content across every fanned-out notification.
+- `BROADCAST_MESSAGE` là một bảng nhẹ: mỗi dòng là một thông báo, gắn với một `department_id` (workspace được nhắm đến) và do một `USER` (Leader) tạo ra.
+- Việc gửi thông báo tái sử dụng cơ chế đa hình (polymorphic) sẵn có của `NOTIFICATION`, vốn đã dùng cho task/comment — một dòng `NOTIFICATION` được tạo cho mỗi thành viên trong phòng ban, với `entity_type = 'BROADCAST_MESSAGE'` và `entity_id = broadcast_id`. Không cần cơ chế gửi mới, chỉ cần một dòng nguồn để tham chiếu (và để audit/export sau này nếu cần) thay vì lặp lại nội dung ở mỗi thông báo được gửi ra.
 
-## Access request / onboarding flow
+## Luồng yêu cầu truy cập / onboarding
 
-Someone requesting access isn't a `USER` yet — no `zitadel_user_id`, no department membership, no role. `ACCESS_REQUEST` models that pre-account state, separate from `USER` for that reason. It also now covers a second case: a locked user asking to be reinstated, who *does* already have a `USER` row.
+Một người yêu cầu truy cập chưa phải là `USER` — chưa có `zitadel_user_id`, chưa thuộc phòng ban nào, chưa có vai trò. `ACCESS_REQUEST` mô hình hóa trạng thái trước-khi-có-tài-khoản đó, tách biệt với `USER` vì lý do này. Bảng này giờ cũng bao trùm thêm một trường hợp thứ hai: một user bị khóa xin được phục hồi, người *đã có sẵn* một dòng `USER`.
 
-- **New account** (`request_type = NEW_ACCOUNT`): submitted with just `full_name`, `email`, and the `department_id` being requested — no Zitadel identity exists yet at this point.
-- **Unlock request** (`request_type = UNLOCK_REQUEST`): submitted by or on behalf of an already-locked user, with `existing_user_id` set to link back to their existing (locked) `USER` row. `full_name`/`email`/`department_id` are still captured (pre-filled from the existing account) so the same review screen/table works for both request types.
-- An admin (`reviewed_by`) approves or rejects either type. Rejecting simply closes the row (`status = REJECTED`); nothing downstream happens.
-- Approving a `NEW_ACCOUNT` request is what actually provisions the account: it creates/invites the Zitadel identity under the requested department's Organization, then creates the matching `USER` row (`department_id`, a default `role_id`, `zitadel_user_id`). `created_user_id` links the request back to that new `USER` row so there's a record of what it became.
-- Approving an `UNLOCK_REQUEST` triggers the Zitadel unlock action on `existing_user_id` instead of creating a new `USER` row — `created_user_id` stays null for this request type since no new account is created.
-- RBAC boundary to enforce at the API layer: an admin should only see and act on requests for the department(s) they administer (per FR-1's workspace isolation) — not requests aimed at other departments.
-- Like account locking, the approve/reject decision is itself worth an `AUDIT_LOG` row (`action = 'APPROVE_ACCESS_REQUEST'` / `'REJECT_ACCESS_REQUEST'`), since it's a permission-granting event under FR-6.
+- **Tài khoản mới** (`request_type = NEW_ACCOUNT`): gửi kèm `full_name`, `email`, và `department_id` được yêu cầu — lúc này chưa tồn tại định danh Zitadel nào.
+- **Yêu cầu mở khóa** (`request_type = UNLOCK_REQUEST`): gửi bởi hoặc thay mặt cho một user đã bị khóa, với `existing_user_id` được set để liên kết về dòng `USER` (đang bị khóa) hiện có. `full_name`/`email`/`department_id` vẫn được ghi nhận (điền sẵn từ tài khoản hiện có) để cùng một màn hình/bảng duyệt dùng được cho cả hai loại yêu cầu.
+- Một admin (`reviewed_by`) duyệt hoặc từ chối một trong hai loại. Từ chối chỉ đơn giản đóng dòng đó lại (`status = REJECTED`); không có tác động gì tiếp theo.
+- Duyệt một yêu cầu `NEW_ACCOUNT` chính là hành động thực sự cấp tài khoản: tạo/mời định danh Zitadel dưới Organization của phòng ban được yêu cầu, sau đó tạo dòng `USER` tương ứng (`department_id`, một `role_id` mặc định, `zitadel_user_id`). `created_user_id` liên kết yêu cầu về dòng `USER` mới đó để có bằng chứng nó đã trở thành gì.
+- Duyệt một `UNLOCK_REQUEST` sẽ kích hoạt hành động mở khóa ở Zitadel cho `existing_user_id` thay vì tạo dòng `USER` mới — `created_user_id` giữ null cho loại yêu cầu này vì không có tài khoản mới nào được tạo.
+- Ranh giới RBAC cần thực thi ở tầng API: một admin chỉ nên thấy và xử lý các yêu cầu thuộc (các) phòng ban mình quản trị (theo nguyên tắc cô lập workspace của FR-1) — không phải các yêu cầu nhắm đến phòng ban khác.
+- Giống như việc khóa tài khoản, quyết định duyệt/từ chối bản thân nó cũng nên có một dòng `AUDIT_LOG` (`action = 'APPROVE_ACCESS_REQUEST'` / `'REJECT_ACCESS_REQUEST'`), vì đây là một sự kiện cấp quyền theo FR-6.
 
 ---
 
-*See also: [`PRD.md`](./PRD.md) for product context, [`SRS.md`](./SRS.md) for the functional requirements this data model supports, [`API_Endpoints.md`](./API_Endpoints.md) for the endpoint spec derived from this schema.*
+## Phụ lục: Tóm tắt ngắn gọn
+
+**Sơ đồ này mô tả gì?** 17 thực thể (bảng), mô hình hóa: phòng ban → nhân sự/vai trò → dự án → cột mốc → task/subtask, cộng thêm bình luận, tệp đính kèm, thẻ gắn nhãn, thông báo, nhật ký hoạt động, và ma trận phân quyền. Ba hệ thống ngoài (Zitadel, NetBird, SharePoint) không có bảng riêng — chỉ được tham chiếu tới.
+
+**5 quyết định thiết kế đáng nhớ nhất:**
+
+1. **`USER.status` và `netbird_connected` chỉ là bản cache, không phải nguồn dữ liệu gốc.** Khóa tài khoản thật sự luôn diễn ra ở Zitadel; app chỉ lưu một bản sao để tra cứu nhanh.
+2. **Milestone là tùy chọn, không bắt buộc.** `TASK.milestone_id` có thể null — project đơn giản không cần tạo milestone giả.
+3. **Chỉ Gantt cần `TASK.start_date`.** Ba view còn lại (Kanban/List/Calendar) dùng chung một tập dữ liệu task, không cần thêm trường nào.
+4. **Nhật ký audit không bao giờ bị xóa.** "Reset mỗi ngày" chỉ là giao diện mặc định hiển thị hôm nay — dữ liệu các ngày trước vẫn còn nguyên, truy vấn được bình thường.
+5. **Dòng Admin trong ma trận phân quyền bị khóa cứng** — không ai (kể cả chính Admin) chỉnh sửa được quyền của Admin qua giao diện này, để tránh tự khóa mất quyền quản trị của cả hệ thống.
+
+**Còn mở, cần quyết định:** `DEPARTMENT` hiện chưa có trường/bảng lưu "cài đặt workspace" (Adjust Workplace Settings) — cần xác định trước những cài đặt đó thực sự là gì rồi mới thêm vào schema.
+
+---
+
+*Xem thêm: [`PRD.md`](./PRD.md) cho bối cảnh sản phẩm, [`SRS.md`](./SRS.md) cho yêu cầu chức năng mà mô hình dữ liệu này hỗ trợ, [`API_Endpoints_VI.md`](./API_Endpoints_VI.md) cho đặc tả endpoint dựa trên schema này.*
