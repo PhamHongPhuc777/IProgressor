@@ -4,7 +4,9 @@
 **Người soạn:**
 **Ngày soạn:** 09/07/2026
 
-> Converted from `Project Requirement Document - Project Managment Web App.pdf` for repo review/reference. Content is unedited from the source PDF (only reformatted to Markdown).
+> Converted from `Project Requirement Document - Project Managment Web App.pdf` for repo review/reference. Content is unedited from the source PDF (only reformatted to Markdown), **except for one correction noted below.**
+>
+> **Revision note:** Section 5.1's role list originally read "Admin / PM / Thành viên / Viewer" — leftover role names that don't match the four personas defined in Section 3 (and used consistently everywhere else: `SRS.md`, `ERD.md`, `API_Endpoints.md`). Corrected below to the canonical four: Admin, Leader, PM, Staff.
 
 ## Table of Contents
 
@@ -74,7 +76,7 @@ Ký hiệu ưu tiên: **M** = Must-have (MVP) · **S** = Should-have (Phase 2) �
 ### 5.1 Workspace theo phòng ban
 
 - [ ] **[M]** Tạo workspace riêng cho mỗi phòng ban, phân quyền thành viên
-- [ ] **[M]** Phân quyền theo vai trò (Admin / PM / Thành viên / Viewer)
+- [ ] **[M]** Phân quyền theo vai trò (Admin / Leader / PM / Staff)
 - [ ] **[S]** Workspace-level dashboard riêng cho từng phòng ban
 
 ### 5.2 Quản lý dự án và liên kết dữ liệu
