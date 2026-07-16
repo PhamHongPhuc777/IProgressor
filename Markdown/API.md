@@ -13,10 +13,10 @@ Zitadel handles the actual login (OIDC redirect flow) — these are the endpoint
 | Method | Path | Description | S | P | L | A |
 |---|---|---|---|---|---|---|
 | GET | `/me` | Current user profile + resolved permissions | 1 | 1 | 1 | 1 |
-| PATCH | `/me/avatar` | Upload/change profile avatar ⚠️ (`USER.avatar_url` missing) | 1 | 1 | 1 | 1 |
+| PATCH | `/me/avatar` | Upload/change profile avatar | 1 | 1 | 1 | 1 |
 | GET | `/me/stats` | Personal task/progress stats | 1 | 0 | 0 | 0 |
 | POST | `/webhooks/zitadel/user-events` | Internal — syncs `USER.status` on lock/unlock events | — | — | — | — |
-| POST | `/webhooks/netbird/connection-events` | Internal — syncs connection status ⚠️ (new field/table) | — | — | — | — |
+| POST | `/webhooks/netbird/connection-events` | Internal — syncs connection status (`USER.netbird_connected`/`netbird_last_seen`) | — | — | — | — |
 
 Password change is Zitadel's own self-service page (out of app scope) — link out, don't proxy it.
 
@@ -47,23 +47,23 @@ Password change is Zitadel's own self-service page (out of app scope) — link o
 | PATCH | `/users/{id}/role` | Promote/demote — requires `confirm: true` in body, writes `AUDIT_LOG`. **Resolved rule:** an Admin cannot change another Admin's role (peer-protection, confirmed by UI mapping doc); self-demotion is allowed as the one exception, **except** when the acting Admin is the last remaining Admin account (blocked, to avoid leaving the system with zero admins) | 0 | 0 | 0 | 1 |
 | POST | `/users/{id}/lock` | Body: `reason` (→ `USER.locked_reason`), triggers Zitadel lock, writes `AUDIT_LOG` | 0 | 0 | 0 | 1 |
 | POST | `/users/{id}/unlock` | Writes `AUDIT_LOG` | 0 | 0 | 0 | 1 |
-| GET | `/users/{id}/netbird-status` | ⚠️ Cached connection status (new field/table) | 0 | 0 | 0 | 1 |
+| GET | `/users/{id}/netbird-status` | Cached connection status (`USER.netbird_connected`/`netbird_last_seen`) | 0 | 0 | 0 | 1 |
 | GET | `/departments/{id}/resource-allocation` | Workload view (PRD 5.3, tagged **S** — confirm still in scope) | 0 | 1 | 0 | 0 |
 | GET | `/departments/{id}/performance-risk` | Aggregate performance/risk (SRS FR-4) | 0 | 0 | 1 | 0 |
 | PATCH | `/departments/{id}/settings` | ⚠️ `DEPARTMENT` has no settings field/table yet | 0 | 0 | 0 | 1 |
 
 ---
 
-## `workspace` — roles & authority matrix ⚠️
+## `workspace` — roles & authority matrix
 
-Assumes **Option B** from the alignment review (admin-configurable matrix). If Option A (hardcoded roles) is chosen instead, this whole section collapses into `@PreAuthorize` annotations and isn't exposed via API.
+Confirmed direction: **Option B** (admin-editable matrix) — matches the "Ma trận phân quyền" mockup already built, with Admin's row locked/non-editable both client- and server-side.
 
 | Method | Path | Description | S | P | L | A |
 |---|---|---|---|---|---|---|
 | GET | `/roles` | List the 4 fixed roles | 0 | 0 | 0 | 1 |
 | GET | `/permissions` | Permission catalog (~25 rows, seeded from this FR table) | 0 | 0 | 0 | 1 |
 | GET | `/roles/{id}/permissions` | View one role's matrix row | 0 | 0 | 0 | 1 |
-| PUT | `/roles/{id}/permissions` | Adjust the matrix, writes `AUDIT_LOG` | 0 | 0 | 0 | 1 |
+| PUT | `/roles/{id}/permissions` | Adjust the matrix for Leader/PM/Staff, writes `AUDIT_LOG`. **Admin's row is immutable** — rejected with 403 if `role_id` resolves to Admin, seeded with all permissions at init. This is the server-side half of the self-lockout guard: the UI locks Admin's column, but the API enforces it too, since a client-side disable alone doesn't stop a direct API call | 0 | 0 | 0 | 1 |
 
 ---
 
@@ -82,7 +82,7 @@ Assumes **Option B** from the alignment review (admin-configurable matrix). If O
 
 ---
 
-## `milestone` ⚠️ (entire domain pending ERD addition)
+## `milestone`
 
 | Method | Path | Description | S | P | L | A |
 |---|---|---|---|---|---|---|
@@ -100,7 +100,7 @@ Assumes **Option B** from the alignment review (admin-configurable matrix). If O
 | GET | `/projects/{id}/tasks` | List tasks (and subtasks via `parent_task_id`) | 1 | 1 | 1 | 1 |
 | GET | `/tasks/{id}` | Detail | 1 | 1 | 1 | 1 |
 | POST | `/projects/{id}/tasks` | Create task or subtask (`parent_task_id` optional) | 0 | 1 | 0 | 1 |
-| PATCH | `/tasks/{id}` | Full edit: title, description ⚠️, priority, deadline, ownership | 0 | 1 | 0 | 1 |
+| PATCH | `/tasks/{id}` | Full edit: title, description, priority, deadline, ownership | 0 | 1 | 0 | 1 |
 | PATCH | `/tasks/{id}/status` | Status update only — Staff limited to tasks/subtasks assigned to them | 1 | 1 | 0 | 1 |
 | DELETE | `/tasks/{id}` | Delete task or subtask | 0 | 1 | 0 | 1 |
 | POST | `/tasks/{id}/tags` | Attach tag | 0 | 1 | 0 | 1 |
@@ -128,7 +128,7 @@ Assumes **Option B** from the alignment review (admin-configurable matrix). If O
 |---|---|---|---|---|---|---|
 | GET | `/notifications` | List — Staff/PM/Leader scoped to own workspace; Admin scoped to **all** workspaces (confirmed by the UI mapping doc — Admin's top-right notification box is explicitly "every workplace") | 1 | 1 | 1 | 1 |
 | PATCH | `/notifications/{id}/read` | Mark read | 1 | 1 | 1 | 1 |
-| POST | `/notifications/broadcast` | Leader-authored global message ⚠️ (needs `BROADCAST_MESSAGE` entity or fan-out design decision) | 0 | 0 | 1 | 0 |
+| POST | `/notifications/broadcast` | Leader-authored global message (`BROADCAST_MESSAGE`, fans out via `NOTIFICATION`) | 0 | 0 | 1 | 0 |
 
 ---
 
