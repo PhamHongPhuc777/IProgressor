@@ -1,8 +1,6 @@
 # API Endpoint Specification — Project Management Web App
 
 > Derived from `Project_Management_Functional_Requirements.pdf`, cross-referenced against `ERD.md`, `PRD.md`, and `SRS.md`. Organized by modular-monolith domain package (see prior architecture discussion). Role columns: **S**taff, **P**M, **L**eader, **A**dmin. `1` = allowed, `0` = not allowed, scoping notes where relevant.
->
-> ⚠️ = endpoint depends on an ERD addition not yet in `ERD.md` — see [Alignment Review](#open-items-before-implementation) at bottom.
 
 ---
 
@@ -50,7 +48,7 @@ Password change is Zitadel's own self-service page (out of app scope) — link o
 | GET | `/users/{id}/netbird-status` | Cached connection status (`USER.netbird_connected`/`netbird_last_seen`) | 0 | 0 | 0 | 1 |
 | GET | `/departments/{id}/resource-allocation` | Workload view (PRD 5.3, tagged **S** — confirm still in scope) | 0 | 1 | 0 | 0 |
 | GET | `/departments/{id}/performance-risk` | Aggregate performance/risk (SRS FR-4) | 0 | 0 | 1 | 0 |
-| PATCH | `/departments/{id}/settings` | ⚠️ `DEPARTMENT` has no settings field/table yet | 0 | 0 | 0 | 1 |
+| PATCH | `/departments/{id}/settings` | `DEPARTMENT` has no settings field/table yet | 0 | 0 | 0 | 1 |
 
 ---
 
