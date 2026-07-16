@@ -1,6 +1,6 @@
 # Đặc tả Endpoint API — Ứng dụng Web Quản lý Dự án
 
-> Bản dịch tiếng Việt của `API_Endpoints.md`. **Method, path (đường dẫn), và tên trường schema được giữ nguyên bằng tiếng Anh** — đây là phần code/hợp đồng API thực tế, không nên dịch. Phần mô tả và ghi chú được dịch sang tiếng Việt.
+> Tài liệu này là bản chính thức (tiếng Việt) của đặc tả endpoint API. **Method, path (đường dẫn), và tên trường schema được giữ nguyên bằng tiếng Anh** — đây là phần code/hợp đồng API thực tế, không nên dịch — phần mô tả và ghi chú được viết bằng tiếng Việt.
 >
 > Cột vai trò: **S**taff (Nhân viên), **P**M (Trưởng phòng), **L**eader (Giám đốc), **A**dmin. `1` = được phép, `0` = không được phép, có ghi chú phạm vi (scoping) khi cần thiết.
 
@@ -124,7 +124,8 @@ Hướng đã chốt: **Phương án B** (ma trận chỉnh sửa được bởi
 
 | Method | Path | Mô tả | S | P | L | A |
 |---|---|---|---|---|---|---|
-| GET | `/notifications` | Danh sách — Staff/PM/Leader chỉ trong workspace mình; Admin thấy **tất cả** workspace (đã xác nhận qua tài liệu UI mapping — hộp thông báo của Admin ghi rõ "mọi workplace") | 1 | 1 | 1 | 1 |
+| GET | `/notifications` | Lịch sử, có phân trang — Staff/PM/Leader chỉ trong workspace mình; Admin thấy **tất cả** workspace (đã xác nhận qua tài liệu UI mapping — hộp thông báo của Admin ghi rõ "mọi workplace") | 1 | 1 | 1 | 1 |
+| GET | `/notifications/stream` | **SSE** (`text/event-stream`) — đẩy thông báo real-time cho tính năng "Has Same Workplace Realtime Notification", đã chốt dùng SSE thay vì WebSocket (chỉ cần đẩy một chiều, hành xử đơn giản hơn qua reverse proxy). Phạm vi giống dòng trên. Client tự động chuyển về polling `/notifications` nếu stream bị ngắt | 1 | 1 | 1 | 1 |
 | PATCH | `/notifications/{id}/read` | Đánh dấu đã đọc | 1 | 1 | 1 | 1 |
 | POST | `/notifications/broadcast` | Thông báo toàn hệ thống do Leader gửi (`BROADCAST_MESSAGE`, phân phối qua `NOTIFICATION`) | 0 | 0 | 1 | 0 |
 
@@ -159,6 +160,11 @@ Hướng đã chốt: **Phương án B** (ma trận chỉnh sửa được bởi
 
 **Đã giải quyết ở vòng gần đây:** đa view (Kanban/List/Gantt/Calendar) chủ yếu là vấn đề client, gộp về một endpoint `GET /projects/{id}/tasks` dùng chung (ngoại lệ: Gantt cần thêm `TASK.start_date`); nhật ký audit không xóa dữ liệu, "reset" chỉ là mặc định giao diện; quy tắc đổi vai trò của Admin đã được làm rõ (không đụng vào Admin khác, tự giáng chức được trừ khi là Admin cuối cùng); xác nhận lỗi copy-paste ở tài liệu nguồn (tính năng 4 view của Admin, không cần sửa gì).
 
+**Đã giải quyết qua lượt rà soát cuối cùng trước khi triển khai:**
+- **Khởi tạo Admin đầu tiên (Admin bootstrap)** — trước đó chưa có cách nào tạo Admin đầu tiên, vì việc tạo tài khoản thường yêu cầu một Admin đã tồn tại duyệt. Giải quyết bằng một migration seed chạy một lần, idempotent — xem mục "Khởi tạo Admin đầu tiên" trong `ERD.md`.
+- **Endpoint thông báo real-time** — quyết định chọn SSE thay vì WebSocket đã được thống nhất trước đó trong quá trình trao đổi nhưng chưa từng được ghi vào file này. Đã bổ sung: `GET /notifications/stream`.
+- **Danh sách seed cho `PERMISSION`** — trước đó chỉ mô tả mơ hồ "~25 dòng, khớp gần đúng với bảng FR". Nay đã liệt kê đầy đủ trong `ERD.md`, mỗi dòng tương ứng một endpoint/năng lực cụ thể, để `ROLE_PERMISSION` có dữ liệu thật để seed.
+
 **Còn mở:**
 - `DEPARTMENT.settings` — cần xác định trước "cài đặt workspace" thực sự gồm những gì rồi mới thêm trường/bảng tương ứng vào `ERD.md`.
 
@@ -186,4 +192,4 @@ Hướng đã chốt: **Phương án B** (ma trận chỉnh sửa được bởi
 
 ---
 
-*Xem thêm: [`ERD_VI.md`](./ERD_VI.md), [`PRD.md`](./PRD.md), [`SRS.md`](./SRS.md).*
+*Xem thêm: [`ERD.md`](./ERD.md), [`PRD.md`](./PRD.md), [`SRS.md`](./SRS.md).*

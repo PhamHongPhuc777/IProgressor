@@ -5,11 +5,6 @@
 **Ngày soạn:** 09/07/2026
 
 > Converted from `Software Requirement Specification - Project Managment Web App.pdf` for repo review/reference. Content is unedited from the source PDF (only reformatted to Markdown), **except for the corrections noted below.**
->
-> **Revision note:**
-> - **Section 1.3** originally assigned "quản lý thành viên và quyền trong phạm vi phòng ban" to Giám đốc (Leader). This contradicted the document's own FR-1 ("Workspace Admin quản lý thành viên và vai trò...") and the PRD's persona table — both agree that member/permission management belongs to Admin, not Leader. Corrected below; Leader's description now reflects its actual scope (cross-workspace oversight, performance/risk, broadcast messaging) per FR-4 and later FR clarification docs.
-> - **FR-3 / FR-4** clarified in place to note which features are role-universal (the 4 project views) vs. split by role (workload/resource-allocation is PM's, performance/risk is Leader's) — matching the detailed Functional Requirements table and UI mapping doc gathered after this SRS was first drafted.
-> - **NFR-4 (Khả năng triển khai / Deployability)** — previously flagged as a gap ("section listed in the TOC but never written"). Per author confirmation, this is now marked as **intentionally deferred**: the app is currently in local development, and deployability requirements (hosting topology, TLS, domain, scaling, CI/CD) will be specified when the project moves toward production, not before.
 
 ## Table of Contents
 
