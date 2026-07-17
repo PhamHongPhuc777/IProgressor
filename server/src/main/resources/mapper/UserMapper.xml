@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.server.workspace.user.UserMapper">
+
+    <resultMap id="userMap" type="com.example.server.workspace.user.User">
+        <constructor>
+            <idArg column="user_id" javaType="java.util.UUID" name="userId"/>
+            <arg column="full_name" javaType="string" name="fullName"/>
+            <arg column="email" javaType="string" name="email"/>
+            <arg column="department_id" javaType="java.util.UUID" name="departmentId"/>
+            <arg column="role_id" javaType="java.util.UUID" name="roleId"/>
+            <arg column="zitadel_user_id" javaType="string" name="zitadelUserId"/>
+            <arg column="status" javaType="string" name="status"/>
+            <arg column="locked_reason" javaType="string" name="lockedReason"/>
+            <arg column="avatar_url" javaType="string" name="avatarUrl"/>
+            <arg column="netbird_connected" javaType="_boolean" name="netbirdConnected"/>
+            <arg column="netbird_last_seen" javaType="java.time.Instant" name="netbirdLastSeen"/>
+        </constructor>
+    </resultMap>
+
+    <select id="findById" resultMap="userMap">
+        SELECT user_id, full_name, email, department_id, role_id, zitadel_user_id, status,
+               locked_reason, avatar_url, netbird_connected, netbird_last_seen
+        FROM users WHERE user_id = #{userId}
+    </select>
+
+    <resultMap id="userSummaryMap" type="com.example.server.workspace.user.dto.UserSummary">
+        <constructor>
+            <idArg column="user_id" javaType="java.util.UUID" name="userId"/>
+            <arg column="full_name" javaType="string" name="fullName"/>
+            <arg column="email" javaType="string" name="email"/>
+            <arg column="department_id" javaType="java.util.UUID" name="departmentId"/>
+            <arg column="department_name" javaType="string" name="departmentName"/>
+            <arg column="role_id" javaType="java.util.UUID" name="roleId"/>
+            <arg column="role_name" javaType="string" name="roleName"/>
+            <arg column="status" javaType="string" name="status"/>
+            <arg column="avatar_url" javaType="string" name="avatarUrl"/>
+        </constructor>
+    </resultMap>
+
+    <sql id="summaryColumns">
+        u.user_id, u.full_name, u.email, u.department_id, d.name AS department_name,
+        u.role_id, r.name AS role_name, u.status, u.avatar_url
+    </sql>
+
+    <sql id="summaryJoins">
+        FROM users u
+        JOIN department d ON d.department_id = u.department_id
+        JOIN role r ON r.role_id = u.role_id
+    </sql>
+
+    <select id="findSummaryById" resultMap="userSummaryMap">
+        SELECT <include refid="summaryColumns"/>
+        <include refid="summaryJoins"/>
+        WHERE u.user_id = #{userId}
+    </select>
+
+    <select id="findSummaryByEmail" resultMap="userSummaryMap">
+        SELECT <include refid="summaryColumns"/>
+        <include refid="summaryJoins"/>
+        WHERE u.email = #{email}
+    </select>
+
+    <insert id="insertProvisioned">
+        INSERT INTO users (user_id, full_name, email, department_id, role_id, zitadel_user_id, status)
+        VALUES (#{userId}, #{fullName}, #{email}, #{departmentId}, #{roleId}, #{zitadelUserId}, 'ACTIVE')
+    </insert>
+
+    <select id="findSummaries" resultMap="userSummaryMap">
+        SELECT <include refid="summaryColumns"/>
+        <include refid="summaryJoins"/>
+        <where>
+            <if test="departmentId != null">u.department_id = #{departmentId}</if>
+        </where>
+        ORDER BY u.full_name
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countSummaries" resultType="long">
+        SELECT COUNT(*) FROM users u
+        <where>
+            <if test="departmentId != null">u.department_id = #{departmentId}</if>
+        </where>
+    </select>
+
+    <select id="findUserIdsByDepartment" resultType="java.util.UUID">
+        SELECT user_id FROM users WHERE department_id = #{departmentId}
+    </select>
+
+    <select id="findNetbirdStatus" resultType="com.example.server.workspace.user.dto.NetbirdStatus">
+        SELECT netbird_connected AS connected, netbird_last_seen AS lastSeen
+        FROM users WHERE user_id = #{userId}
+    </select>
+
+    <select id="findRoleInfo" resultMap="userRoleInfoMap">
+        SELECT u.user_id, u.department_id, r.name AS role_name, u.status
+        FROM users u
+        JOIN role r ON r.role_id = u.role_id
+        WHERE u.user_id = #{userId}
+    </select>
+
+    <resultMap id="userRoleInfoMap" type="com.example.server.workspace.user.dto.UserRoleInfo">
+        <constructor>
+            <idArg column="user_id" javaType="java.util.UUID" name="userId"/>
+            <arg column="department_id" javaType="java.util.UUID" name="departmentId"/>
+            <arg column="role_name" javaType="string" name="roleName"/>
+            <arg column="status" javaType="string" name="status"/>
+        </constructor>
+    </resultMap>
+
+    <select id="countActiveAdmins" resultType="long">
+        SELECT COUNT(*) FROM users u
+        JOIN role r ON r.role_id = u.role_id
+        WHERE r.name = 'Admin' AND u.status = 'ACTIVE'
+    </select>
+
+    <update id="updateRole">
+        UPDATE users SET role_id = #{roleId} WHERE user_id = #{userId}
+    </update>
+
+    <update id="lock">
+        UPDATE users SET status = 'LOCKED', locked_reason = #{reason} WHERE user_id = #{userId}
+    </update>
+
+    <update id="unlock">
+        UPDATE users SET status = 'ACTIVE', locked_reason = NULL WHERE user_id = #{userId}
+    </update>
+
+    <update id="updateAvatar">
+        UPDATE users SET avatar_url = #{avatarUrl} WHERE user_id = #{userId}
+    </update>
+
+    <update id="updateStatusByZitadelUserId">
+        UPDATE users SET status = #{status} WHERE zitadel_user_id = #{zitadelUserId}
+    </update>
+
+    <update id="updateNetbirdStatusByZitadelUserId">
+        UPDATE users SET netbird_connected = #{connected}, netbird_last_seen = #{lastSeen}
+        WHERE zitadel_user_id = #{zitadelUserId}
+    </update>
+
+</mapper>

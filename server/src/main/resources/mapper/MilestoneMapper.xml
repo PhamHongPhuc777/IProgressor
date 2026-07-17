@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.server.milestone.MilestoneMapper">
+
+    <resultMap id="milestoneMap" type="com.example.server.milestone.Milestone">
+        <constructor>
+            <idArg column="milestone_id" javaType="java.util.UUID" name="milestoneId"/>
+            <arg column="project_id" javaType="java.util.UUID" name="projectId"/>
+            <arg column="name" javaType="string" name="name"/>
+            <arg column="due_date" javaType="java.time.LocalDate" name="dueDate"/>
+            <arg column="status" javaType="string" name="status"/>
+        </constructor>
+    </resultMap>
+
+    <select id="findById" resultMap="milestoneMap">
+        SELECT milestone_id, project_id, name, due_date, status FROM milestone WHERE milestone_id = #{milestoneId}
+    </select>
+
+    <select id="findByProject" resultMap="milestoneMap">
+        SELECT milestone_id, project_id, name, due_date, status FROM milestone
+        WHERE project_id = #{projectId}
+        ORDER BY due_date NULLS LAST, name
+    </select>
+
+    <insert id="insert">
+        INSERT INTO milestone (milestone_id, project_id, name, due_date, status)
+        VALUES (#{milestoneId}, #{projectId}, #{name}, #{dueDate}, COALESCE(#{status}, 'NOT_STARTED'))
+    </insert>
+
+    <update id="update">
+        UPDATE milestone
+        <set>
+            <if test="name != null">name = #{name},</if>
+            <if test="dueDate != null">due_date = #{dueDate},</if>
+            <if test="status != null">status = #{status},</if>
+        </set>
+        WHERE milestone_id = #{milestoneId}
+    </update>
+
+    <delete id="delete">
+        DELETE FROM milestone WHERE milestone_id = #{milestoneId}
+    </delete>
+
+</mapper>

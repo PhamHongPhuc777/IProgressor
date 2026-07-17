@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.server.workspace.role.RoleMapper">
+
+    <resultMap id="roleMap" type="com.example.server.workspace.role.Role">
+        <constructor>
+            <idArg column="role_id" javaType="java.util.UUID" name="roleId"/>
+            <arg column="name" javaType="string" name="name"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap id="permissionMap" type="com.example.server.workspace.role.Permission">
+        <constructor>
+            <idArg column="permission_id" javaType="java.util.UUID" name="permissionId"/>
+            <arg column="key" javaType="string" name="key"/>
+            <arg column="description" javaType="string" name="description"/>
+        </constructor>
+    </resultMap>
+
+    <select id="findAll" resultMap="roleMap">
+        SELECT role_id, name FROM role ORDER BY name
+    </select>
+
+    <select id="findById" resultMap="roleMap">
+        SELECT role_id, name FROM role WHERE role_id = #{roleId}
+    </select>
+
+    <select id="findByName" resultMap="roleMap">
+        SELECT role_id, name FROM role WHERE name = #{name}
+    </select>
+
+    <select id="findAllPermissions" resultMap="permissionMap">
+        SELECT permission_id, key, description FROM permission ORDER BY key
+    </select>
+
+    <select id="findPermissionsForRole" resultMap="permissionMap">
+        SELECT p.permission_id, p.key, p.description
+        FROM role_permission rp
+        JOIN permission p ON p.permission_id = rp.permission_id
+        WHERE rp.role_id = #{roleId}
+        ORDER BY p.key
+    </select>
+
+    <delete id="deletePermissionsForRole">
+        DELETE FROM role_permission WHERE role_id = #{roleId}
+    </delete>
+
+    <insert id="insertRolePermissions">
+        INSERT INTO role_permission (role_id, permission_id)
+        VALUES
+        <foreach collection="permissionIds" item="permissionId" separator=",">
+            (#{roleId}, #{permissionId})
+        </foreach>
+    </insert>
+
+</mapper>

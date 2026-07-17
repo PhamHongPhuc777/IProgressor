@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.server.workspace.department.DepartmentMapper">
+
+    <resultMap id="departmentMap" type="com.example.server.workspace.department.Department">
+        <constructor>
+            <idArg column="department_id" javaType="java.util.UUID" name="departmentId"/>
+            <arg column="name" javaType="string" name="name"/>
+            <arg column="zitadel_org_id" javaType="string" name="zitadelOrgId"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap id="workloadMap" type="com.example.server.workspace.department.dto.WorkloadEntry">
+        <constructor>
+            <idArg column="user_id" javaType="java.util.UUID" name="userId"/>
+            <arg column="full_name" javaType="string" name="fullName"/>
+            <arg column="active_task_count" javaType="_long" name="activeTaskCount"/>
+            <arg column="overdue_task_count" javaType="_long" name="overdueTaskCount"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap id="performanceMap" type="com.example.server.workspace.department.dto.DepartmentPerformance">
+        <constructor>
+            <idArg column="department_id" javaType="java.util.UUID" name="departmentId"/>
+            <arg column="department_name" javaType="string" name="departmentName"/>
+            <arg column="total_tasks" javaType="_long" name="totalTasks"/>
+            <arg column="completed_tasks" javaType="_long" name="completedTasks"/>
+            <arg column="overdue_tasks" javaType="_long" name="overdueTasks"/>
+            <arg column="completion_rate" javaType="_double" name="completionRate"/>
+            <arg column="at_risk" javaType="_boolean" name="atRisk"/>
+        </constructor>
+    </resultMap>
+
+    <select id="findAll" resultMap="departmentMap">
+        SELECT department_id, name, zitadel_org_id FROM department ORDER BY name
+    </select>
+
+    <select id="findById" resultMap="departmentMap">
+        SELECT department_id, name, zitadel_org_id FROM department WHERE department_id = #{departmentId}
+    </select>
+
+    <select id="findWorkload" resultMap="workloadMap">
+        SELECT u.user_id, u.full_name,
+            COUNT(*) FILTER (WHERE t.status IS NOT NULL AND t.status &lt;&gt; 'COMPLETED') AS active_task_count,
+            COUNT(*) FILTER (WHERE t.status IS NOT NULL AND t.status &lt;&gt; 'COMPLETED' AND t.due_date &lt; CURRENT_DATE) AS overdue_task_count
+        FROM users u
+        LEFT JOIN task t ON t.assignee_id = u.user_id
+            AND t.project_id IN (SELECT project_id FROM project WHERE department_id = #{departmentId})
+        WHERE u.department_id = #{departmentId}
+        GROUP BY u.user_id, u.full_name
+        ORDER BY u.full_name
+    </select>
+
+    <select id="findPerformance" resultMap="performanceMap">
+        SELECT d.department_id, d.name AS department_name,
+            COUNT(t.task_id) AS total_tasks,
+            COUNT(*) FILTER (WHERE t.status = 'COMPLETED') AS completed_tasks,
+            COUNT(*) FILTER (WHERE t.status &lt;&gt; 'COMPLETED' AND t.due_date &lt; CURRENT_DATE) AS overdue_tasks,
+            CASE WHEN COUNT(t.task_id) = 0 THEN 0
+                 ELSE ROUND(COUNT(*) FILTER (WHERE t.status = 'COMPLETED')::numeric / COUNT(t.task_id) * 100, 1)
+            END AS completion_rate,
+            (COUNT(*) FILTER (WHERE t.status &lt;&gt; 'COMPLETED' AND t.due_date &lt; CURRENT_DATE) > 0) AS at_risk
+        FROM department d
+        LEFT JOIN project p ON p.department_id = d.department_id
+        LEFT JOIN task t ON t.project_id = p.project_id
+        WHERE d.department_id = #{departmentId}
+        GROUP BY d.department_id, d.name
+    </select>
+
+</mapper>

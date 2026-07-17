@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.server.audit.AuditMapper">
+
+    <resultMap id="auditLogMap" type="com.example.server.audit.AuditLog">
+        <constructor>
+            <idArg column="audit_id" javaType="java.util.UUID" name="auditId"/>
+            <arg column="actor_id" javaType="java.util.UUID" name="actorId"/>
+            <arg column="action" javaType="string" name="action"/>
+            <arg column="entity_type" javaType="string" name="entityType"/>
+            <arg column="entity_id" javaType="java.util.UUID" name="entityId"/>
+            <arg column="created_at" javaType="java.time.Instant" name="createdAt"/>
+        </constructor>
+    </resultMap>
+
+    <insert id="insert">
+        INSERT INTO audit_log (actor_id, action, entity_type, entity_id)
+        VALUES (#{actorId}, #{action}, #{entityType}, #{entityId})
+    </insert>
+
+    <select id="search" resultMap="auditLogMap">
+        SELECT audit_id, actor_id, action, entity_type, entity_id, created_at
+        FROM audit_log
+        WHERE created_at::date = #{date}
+        <if test="actorId != null">AND actor_id = #{actorId}</if>
+        <if test="entityType != null">AND entity_type = #{entityType}</if>
+        ORDER BY created_at DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="count" resultType="long">
+        SELECT COUNT(*)
+        FROM audit_log
+        WHERE created_at::date = #{date}
+        <if test="actorId != null">AND actor_id = #{actorId}</if>
+        <if test="entityType != null">AND entity_type = #{entityType}</if>
+    </select>
+
+    <select id="findDistinctDays" resultType="java.time.LocalDate">
+        SELECT DISTINCT created_at::date AS day
+        FROM audit_log
+        ORDER BY day DESC
+    </select>
+
+    <select id="findAllForDate" resultMap="auditLogMap">
+        SELECT audit_id, actor_id, action, entity_type, entity_id, created_at
+        FROM audit_log
+        WHERE created_at::date = #{date}
+        ORDER BY created_at ASC
+    </select>
+
+</mapper>

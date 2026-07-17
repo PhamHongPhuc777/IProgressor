@@ -1,0 +1,8 @@
+# IDE
+.idea/
+.vscode/
+
+# Claude Code local/session-specific state (not meant to be shared)
+.claude/worktrees/
+**/.claude/settings.local.json
+**/.claude/scheduled_tasks.lock

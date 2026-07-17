@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.server.task.tag.TagMapper">
+
+    <resultMap id="tagMap" type="com.example.server.task.tag.Tag">
+        <constructor>
+            <idArg column="tag_id" javaType="java.util.UUID" name="tagId"/>
+            <arg column="name" javaType="string" name="name"/>
+        </constructor>
+    </resultMap>
+
+    <select id="findByName" resultMap="tagMap">
+        SELECT tag_id, name FROM tag WHERE name = #{name}
+    </select>
+
+    <select id="findById" resultMap="tagMap">
+        SELECT tag_id, name FROM tag WHERE tag_id = #{tagId}
+    </select>
+
+    <insert id="insert">
+        INSERT INTO tag (tag_id, name) VALUES (#{tagId}, #{name})
+    </insert>
+
+</mapper>

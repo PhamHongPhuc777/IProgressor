@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.server.notification.broadcast.BroadcastMapper">
+
+    <resultMap id="broadcastMap" type="com.example.server.notification.broadcast.BroadcastMessage">
+        <constructor>
+            <idArg column="broadcast_id" javaType="java.util.UUID" name="broadcastId"/>
+            <arg column="department_id" javaType="java.util.UUID" name="departmentId"/>
+            <arg column="author_id" javaType="java.util.UUID" name="authorId"/>
+            <arg column="content" javaType="string" name="content"/>
+            <arg column="created_at" javaType="java.time.Instant" name="createdAt"/>
+        </constructor>
+    </resultMap>
+
+    <insert id="insert">
+        INSERT INTO broadcast_message (broadcast_id, department_id, author_id, content)
+        VALUES (#{broadcastId}, #{departmentId}, #{authorId}, #{content})
+    </insert>
+
+    <select id="findById" resultMap="broadcastMap">
+        SELECT broadcast_id, department_id, author_id, content, created_at
+        FROM broadcast_message WHERE broadcast_id = #{broadcastId}
+    </select>
+
+</mapper>

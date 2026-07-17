@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.server.project.ProjectMapper">
+
+    <resultMap id="projectMap" type="com.example.server.project.Project">
+        <constructor>
+            <idArg column="project_id" javaType="java.util.UUID" name="projectId"/>
+            <arg column="name" javaType="string" name="name"/>
+            <arg column="department_id" javaType="java.util.UUID" name="departmentId"/>
+            <arg column="department_name" javaType="string" name="departmentName"/>
+            <arg column="owner_id" javaType="java.util.UUID" name="ownerId"/>
+            <arg column="owner_name" javaType="string" name="ownerName"/>
+            <arg column="status" javaType="string" name="status"/>
+            <arg column="start_date" javaType="java.time.LocalDate" name="startDate"/>
+            <arg column="end_date" javaType="java.time.LocalDate" name="endDate"/>
+        </constructor>
+    </resultMap>
+
+    <sql id="columns">
+        p.project_id, p.name, p.department_id, d.name AS department_name,
+        p.owner_id, u.full_name AS owner_name, p.status, p.start_date, p.end_date
+    </sql>
+
+    <sql id="joins">
+        FROM project p
+        JOIN department d ON d.department_id = p.department_id
+        JOIN users u ON u.user_id = p.owner_id
+    </sql>
+
+    <select id="findById" resultMap="projectMap">
+        SELECT <include refid="columns"/>
+        <include refid="joins"/>
+        WHERE p.project_id = #{projectId}
+    </select>
+
+    <select id="search" resultMap="projectMap">
+        SELECT <include refid="columns"/>
+        <include refid="joins"/>
+        <where>
+            <if test="departmentId != null">AND p.department_id = #{departmentId}</if>
+            <if test="status != null">AND p.status = #{status}</if>
+        </where>
+        ORDER BY p.name
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="count" resultType="long">
+        SELECT COUNT(*) FROM project p
+        <where>
+            <if test="departmentId != null">AND p.department_id = #{departmentId}</if>
+            <if test="status != null">AND p.status = #{status}</if>
+        </where>
+    </select>
+
+    <insert id="insert">
+        INSERT INTO project (project_id, name, department_id, owner_id, status, start_date, end_date)
+        VALUES (#{projectId}, #{name}, #{departmentId}, #{ownerId}, #{status}, #{startDate}, #{endDate})
+    </insert>
+
+    <update id="update">
+        UPDATE project
+        <set>
+            <if test="name != null">name = #{name},</if>
+            <if test="ownerId != null">owner_id = #{ownerId},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="startDate != null">start_date = #{startDate},</if>
+            <if test="endDate != null">end_date = #{endDate},</if>
+        </set>
+        WHERE project_id = #{projectId}
+    </update>
+
+    <update id="archive">
+        UPDATE project SET status = 'ARCHIVED' WHERE project_id = #{projectId}
+    </update>
+
+</mapper>

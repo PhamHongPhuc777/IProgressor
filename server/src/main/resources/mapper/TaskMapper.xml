@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.server.task.task.TaskMapper">
+
+    <resultMap id="taskRowMap" type="com.example.server.task.task.dto.TaskRow">
+        <constructor>
+            <idArg column="task_id" javaType="java.util.UUID" name="taskId"/>
+            <arg column="project_id" javaType="java.util.UUID" name="projectId"/>
+            <arg column="milestone_id" javaType="java.util.UUID" name="milestoneId"/>
+            <arg column="parent_task_id" javaType="java.util.UUID" name="parentTaskId"/>
+            <arg column="assignee_id" javaType="java.util.UUID" name="assigneeId"/>
+            <arg column="assignee_name" javaType="string" name="assigneeName"/>
+            <arg column="title" javaType="string" name="title"/>
+            <arg column="description" javaType="string" name="description"/>
+            <arg column="start_date" javaType="java.time.LocalDate" name="startDate"/>
+            <arg column="due_date" javaType="java.time.LocalDate" name="dueDate"/>
+            <arg column="status" javaType="string" name="status"/>
+            <arg column="priority" javaType="string" name="priority"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap id="taskTagRowMap" type="com.example.server.task.task.dto.TaskTagRow">
+        <constructor>
+            <idArg column="task_id" javaType="java.util.UUID" name="taskId"/>
+            <arg column="tag_name" javaType="string" name="tagName"/>
+        </constructor>
+    </resultMap>
+
+    <sql id="columns">
+        t.task_id, t.project_id, t.milestone_id, t.parent_task_id,
+        t.assignee_id, u.full_name AS assignee_name,
+        t.title, t.description, t.start_date, t.due_date, t.status, t.priority
+    </sql>
+
+    <sql id="joins">
+        FROM task t
+        LEFT JOIN users u ON u.user_id = t.assignee_id
+    </sql>
+
+    <select id="findById" resultMap="taskRowMap">
+        SELECT <include refid="columns"/>
+        <include refid="joins"/>
+        WHERE t.task_id = #{taskId}
+    </select>
+
+    <select id="findByProject" resultMap="taskRowMap">
+        SELECT <include refid="columns"/>
+        <include refid="joins"/>
+        WHERE t.project_id = #{projectId}
+        ORDER BY t.due_date NULLS LAST, t.title
+    </select>
+
+    <select id="findTagsByProject" resultMap="taskTagRowMap">
+        SELECT tt.task_id, tag.name AS tag_name
+        FROM task_tag tt
+        JOIN tag ON tag.tag_id = tt.tag_id
+        JOIN task t ON t.task_id = tt.task_id
+        WHERE t.project_id = #{projectId}
+    </select>
+
+    <select id="findTagsByTask" resultType="string">
+        SELECT tag.name
+        FROM task_tag tt
+        JOIN tag ON tag.tag_id = tt.tag_id
+        WHERE tt.task_id = #{taskId}
+        ORDER BY tag.name
+    </select>
+
+    <insert id="insert">
+        INSERT INTO task (task_id, project_id, milestone_id, parent_task_id, assignee_id, title, description,
+                           start_date, due_date, status, priority)
+        VALUES (#{taskId}, #{projectId}, #{milestoneId}, #{parentTaskId}, #{assigneeId}, #{title}, #{description},
+                #{startDate}, #{dueDate}, COALESCE(#{status}, 'NOT_STARTED'), COALESCE(#{priority}, 'MEDIUM'))
+    </insert>
+
+    <update id="update">
+        UPDATE task
+        <set>
+            <if test="title != null">title = #{title},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="milestoneId != null">milestone_id = #{milestoneId},</if>
+            <if test="assigneeId != null">assignee_id = #{assigneeId},</if>
+            <if test="startDate != null">start_date = #{startDate},</if>
+            <if test="dueDate != null">due_date = #{dueDate},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="priority != null">priority = #{priority},</if>
+        </set>
+        WHERE task_id = #{taskId}
+    </update>
+
+    <update id="updateStatus">
+        UPDATE task SET status = #{status} WHERE task_id = #{taskId}
+    </update>
+
+    <delete id="delete">
+        DELETE FROM task WHERE task_id = #{taskId}
+    </delete>
+
+    <insert id="addTag">
+        INSERT INTO task_tag (task_id, tag_id) VALUES (#{taskId}, #{tagId})
+        ON CONFLICT DO NOTHING
+    </insert>
+
+    <delete id="removeTag">
+        DELETE FROM task_tag WHERE task_id = #{taskId} AND tag_id = #{tagId}
+    </delete>
+
+</mapper>

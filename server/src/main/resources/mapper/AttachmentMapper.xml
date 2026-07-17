@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.server.task.attachment.AttachmentMapper">
+
+    <resultMap id="attachmentMap" type="com.example.server.task.attachment.Attachment">
+        <constructor>
+            <idArg column="attachment_id" javaType="java.util.UUID" name="attachmentId"/>
+            <arg column="task_id" javaType="java.util.UUID" name="taskId"/>
+            <arg column="project_id" javaType="java.util.UUID" name="projectId"/>
+            <arg column="storage_type" javaType="string" name="storageType"/>
+            <arg column="sharepoint_item_id" javaType="string" name="sharepointItemId"/>
+            <arg column="url" javaType="string" name="url"/>
+            <arg column="uploaded_by" javaType="java.util.UUID" name="uploadedBy"/>
+            <arg column="uploaded_by_name" javaType="string" name="uploadedByName"/>
+            <arg column="created_at" javaType="java.time.Instant" name="createdAt"/>
+        </constructor>
+    </resultMap>
+
+    <sql id="columns">
+        a.attachment_id, a.task_id, a.project_id, a.storage_type, a.sharepoint_item_id, a.url,
+        a.uploaded_by, u.full_name AS uploaded_by_name, a.created_at
+    </sql>
+
+    <select id="findByTask" resultMap="attachmentMap">
+        SELECT <include refid="columns"/>
+        FROM attachment a
+        JOIN users u ON u.user_id = a.uploaded_by
+        WHERE a.task_id = #{taskId}
+        ORDER BY a.created_at DESC
+    </select>
+
+    <select id="findById" resultMap="attachmentMap">
+        SELECT <include refid="columns"/>
+        FROM attachment a
+        JOIN users u ON u.user_id = a.uploaded_by
+        WHERE a.attachment_id = #{attachmentId}
+    </select>
+
+    <insert id="insert">
+        INSERT INTO attachment (attachment_id, task_id, project_id, storage_type, sharepoint_item_id, url, uploaded_by)
+        VALUES (#{attachmentId}, #{taskId}, #{projectId}, #{storageType}, #{sharepointItemId}, #{url}, #{uploadedBy})
+    </insert>
+
+    <delete id="delete">
+        DELETE FROM attachment WHERE attachment_id = #{attachmentId}
+    </delete>
+
+</mapper>

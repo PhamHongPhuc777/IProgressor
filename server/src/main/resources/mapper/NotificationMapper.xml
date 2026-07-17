@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.server.notification.notification.NotificationMapper">
+
+    <resultMap id="notificationMap" type="com.example.server.notification.notification.Notification">
+        <constructor>
+            <idArg column="notification_id" javaType="java.util.UUID" name="notificationId"/>
+            <arg column="user_id" javaType="java.util.UUID" name="userId"/>
+            <arg column="entity_type" javaType="string" name="entityType"/>
+            <arg column="entity_id" javaType="java.util.UUID" name="entityId"/>
+            <arg column="is_read" javaType="_boolean" name="isRead"/>
+            <arg column="created_at" javaType="java.time.Instant" name="createdAt"/>
+        </constructor>
+    </resultMap>
+
+    <sql id="columns">notification_id, user_id, entity_type, entity_id, is_read, created_at</sql>
+
+    <select id="findById" resultMap="notificationMap">
+        SELECT <include refid="columns"/> FROM notification WHERE notification_id = #{notificationId}
+    </select>
+
+    <select id="findByUser" resultMap="notificationMap">
+        SELECT <include refid="columns"/> FROM notification
+        WHERE user_id = #{userId}
+        ORDER BY created_at DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countByUser" resultType="long">
+        SELECT COUNT(*) FROM notification WHERE user_id = #{userId}
+    </select>
+
+    <select id="findAll" resultMap="notificationMap">
+        SELECT <include refid="columns"/> FROM notification
+        ORDER BY created_at DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countAll" resultType="long">
+        SELECT COUNT(*) FROM notification
+    </select>
+
+    <insert id="insert">
+        INSERT INTO notification (notification_id, user_id, entity_type, entity_id)
+        VALUES (#{notificationId}, #{userId}, #{entityType}, #{entityId})
+    </insert>
+
+    <update id="markRead">
+        UPDATE notification SET is_read = TRUE WHERE notification_id = #{notificationId} AND user_id = #{userId}
+    </update>
+
+</mapper>

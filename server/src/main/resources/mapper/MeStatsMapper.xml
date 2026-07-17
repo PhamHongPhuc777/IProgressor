@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.server.me.MeStatsMapper">
+
+    <resultMap id="myStatsMap" type="com.example.server.me.dto.MyStats">
+        <constructor>
+            <arg column="assigned_task_count" javaType="_long" name="assignedTaskCount"/>
+            <arg column="completed_task_count" javaType="_long" name="completedTaskCount"/>
+            <arg column="overdue_task_count" javaType="_long" name="overdueTaskCount"/>
+            <arg column="in_progress_task_count" javaType="_long" name="inProgressTaskCount"/>
+        </constructor>
+    </resultMap>
+
+    <select id="findStats" resultMap="myStatsMap">
+        SELECT
+            COUNT(*) AS assigned_task_count,
+            COUNT(*) FILTER (WHERE status = 'COMPLETED') AS completed_task_count,
+            COUNT(*) FILTER (WHERE status &lt;&gt; 'COMPLETED' AND due_date &lt; CURRENT_DATE) AS overdue_task_count,
+            COUNT(*) FILTER (WHERE status = 'IN_PROGRESS') AS in_progress_task_count
+        FROM task
+        WHERE assignee_id = #{userId}
+    </select>
+
+</mapper>

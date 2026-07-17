@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.server.task.comment.CommentMapper">
+
+    <resultMap id="commentMap" type="com.example.server.task.comment.Comment">
+        <constructor>
+            <idArg column="comment_id" javaType="java.util.UUID" name="commentId"/>
+            <arg column="task_id" javaType="java.util.UUID" name="taskId"/>
+            <arg column="author_id" javaType="java.util.UUID" name="authorId"/>
+            <arg column="author_name" javaType="string" name="authorName"/>
+            <arg column="content" javaType="string" name="content"/>
+            <arg column="created_at" javaType="java.time.Instant" name="createdAt"/>
+        </constructor>
+    </resultMap>
+
+    <sql id="columns">
+        c.comment_id, c.task_id, c.author_id, u.full_name AS author_name, c.content, c.created_at
+    </sql>
+
+    <select id="findByTask" resultMap="commentMap">
+        SELECT <include refid="columns"/>
+        FROM comment c
+        JOIN users u ON u.user_id = c.author_id
+        WHERE c.task_id = #{taskId}
+        ORDER BY c.created_at ASC
+    </select>
+
+    <select id="findById" resultMap="commentMap">
+        SELECT <include refid="columns"/>
+        FROM comment c
+        JOIN users u ON u.user_id = c.author_id
+        WHERE c.comment_id = #{commentId}
+    </select>
+
+    <insert id="insert">
+        INSERT INTO comment (comment_id, task_id, author_id, content)
+        VALUES (#{commentId}, #{taskId}, #{authorId}, #{content})
+    </insert>
+
+</mapper>

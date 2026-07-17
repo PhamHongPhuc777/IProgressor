@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.server.workspace.accessrequest.AccessRequestMapper">
+
+    <resultMap id="accessRequestMap" type="com.example.server.workspace.accessrequest.AccessRequest">
+        <constructor>
+            <idArg column="request_id" javaType="java.util.UUID" name="requestId"/>
+            <arg column="request_type" javaType="string" name="requestType"/>
+            <arg column="full_name" javaType="string" name="fullName"/>
+            <arg column="email" javaType="string" name="email"/>
+            <arg column="department_id" javaType="java.util.UUID" name="departmentId"/>
+            <arg column="existing_user_id" javaType="java.util.UUID" name="existingUserId"/>
+            <arg column="status" javaType="string" name="status"/>
+            <arg column="requested_at" javaType="java.time.Instant" name="requestedAt"/>
+            <arg column="reviewed_by" javaType="java.util.UUID" name="reviewedBy"/>
+            <arg column="reviewed_at" javaType="java.time.Instant" name="reviewedAt"/>
+            <arg column="created_user_id" javaType="java.util.UUID" name="createdUserId"/>
+        </constructor>
+    </resultMap>
+
+    <sql id="columns">
+        request_id, request_type, full_name, email, department_id, existing_user_id,
+        status, requested_at, reviewed_by, reviewed_at, created_user_id
+    </sql>
+
+    <insert id="insert">
+        INSERT INTO access_request (request_id, request_type, full_name, email, department_id, existing_user_id)
+        VALUES (#{requestId}, #{requestType}, #{fullName}, #{email}, #{departmentId}, #{existingUserId})
+    </insert>
+
+    <select id="findById" resultMap="accessRequestMap">
+        SELECT <include refid="columns"/> FROM access_request WHERE request_id = #{requestId}
+    </select>
+
+    <select id="findByDepartment" resultMap="accessRequestMap">
+        SELECT <include refid="columns"/> FROM access_request
+        <where>
+            department_id = #{departmentId}
+            <if test="status != null">AND status = #{status}</if>
+        </where>
+        ORDER BY requested_at DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countByDepartment" resultType="long">
+        SELECT COUNT(*) FROM access_request
+        <where>
+            department_id = #{departmentId}
+            <if test="status != null">AND status = #{status}</if>
+        </where>
+    </select>
+
+    <update id="approveNewAccount">
+        UPDATE access_request
+        SET status = 'APPROVED', reviewed_by = #{reviewedBy}, reviewed_at = now(), created_user_id = #{createdUserId}
+        WHERE request_id = #{requestId}
+    </update>
+
+    <update id="approveUnlock">
+        UPDATE access_request
+        SET status = 'APPROVED', reviewed_by = #{reviewedBy}, reviewed_at = now()
+        WHERE request_id = #{requestId}
+    </update>
+
+    <update id="reject">
+        UPDATE access_request
+        SET status = 'REJECTED', reviewed_by = #{reviewedBy}, reviewed_at = now()
+        WHERE request_id = #{requestId}
+    </update>
+
+</mapper>
