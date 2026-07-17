@@ -58,7 +58,24 @@ a local `users` row with the desired role.
 
 ## NetBird
 
-Not wired into this compose file yet. `integration/netbird` currently ships an interface + a
-dev-profile no-op stub only -- see that package's Javadoc for why (self-hosted NetBird's own
-quickstart requires a public domain + Let's Encrypt TLS, which doesn't fit a pure local-dev setup;
-this needs revisiting once there's a concrete plan for that).
+Using NetBird Cloud (`https://api.netbird.io`), not self-hosted -- self-hosted NetBird's own
+quickstart requires a public domain + Let's Encrypt TLS, which doesn't fit a pure local-dev setup.
+`RealNetBirdClient` matches NetBird users by **email**, not Zitadel identity: NetBird Cloud (a
+remote service) can't reach a local self-hosted Zitadel instance to do OIDC discovery, so
+`idp_id`-based SSO linkage isn't viable here.
+
+1. Sign up at [netbird.io](https://netbird.io) and log into the dashboard.
+2. Go to **Users -> Me**, create a **Personal Access Token** -- this is `NETBIRD_API_TOKEN` below.
+3. That's it for setup -- `RealNetBirdClient` creates NetBird groups (one per department) and
+   invites/syncs users on its own via the API when access requests are approved or a user is
+   locked/unlocked. No group needs to be created manually.
+
+| Variable | Value |
+|---|---|
+| `NETBIRD_API_BASE_URL` | `https://api.netbird.io` (default, only change for self-hosted) |
+| `NETBIRD_API_TOKEN` | the PAT from step 2 |
+
+Inbound webhook signature verification (NetBird pushing connection events back to this app) is
+still deferred -- NetBird's own docs were unclear on whether the self-hosted OSS edition's event
+streaming feature applies to Cloud the same way, so `webhook/dto/NetbirdConnectionEventPayload`'s
+shape is still provisional. Revisit once that's confirmed against a real webhook payload.
