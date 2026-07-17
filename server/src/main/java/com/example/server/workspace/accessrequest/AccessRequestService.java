@@ -88,7 +88,7 @@ public class AccessRequestService {
             Role staffRole = roleService.getByName("Staff");
             User newUser = userService.provision(request.fullName(), request.email(),
                 request.departmentId(), staffRole.roleId(), zitadelUserId);
-            netBirdClient.addUserToGroup(zitadelUserId, request.departmentId());
+            netBirdClient.addUserToGroup(request.email(), request.fullName(), request.departmentId());
             accessRequestMapper.approveNewAccount(id, reviewerId, newUser.userId());
         }
         auditService.record("APPROVE_ACCESS_REQUEST", "ACCESS_REQUEST", id);

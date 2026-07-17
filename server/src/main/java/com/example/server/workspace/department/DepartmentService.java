@@ -37,6 +37,11 @@ public class DepartmentService {
         departmentMapper.updateZitadelOrgId(departmentId, zitadelOrgId);
     }
 
+    /** Called by NetBirdClient after lazily creating the group for this department. */
+    public void updateNetbirdGroupId(UUID departmentId, String netbirdGroupId) {
+        departmentMapper.updateNetbirdGroupId(departmentId, netbirdGroupId);
+    }
+
     public List<WorkloadEntry> getResourceAllocation(UUID departmentId) {
         AuthenticatedUser actor = CurrentUser.get();
         if (!departmentId.equals(actor.departmentId())) {

@@ -7,6 +7,7 @@
             <idArg column="department_id" javaType="java.util.UUID" name="departmentId"/>
             <arg column="name" javaType="string" name="name"/>
             <arg column="zitadel_org_id" javaType="string" name="zitadelOrgId"/>
+            <arg column="netbird_group_id" javaType="string" name="netbirdGroupId"/>
         </constructor>
     </resultMap>
 
@@ -32,15 +33,19 @@
     </resultMap>
 
     <select id="findAll" resultMap="departmentMap">
-        SELECT department_id, name, zitadel_org_id FROM department ORDER BY name
+        SELECT department_id, name, zitadel_org_id, netbird_group_id FROM department ORDER BY name
     </select>
 
     <select id="findById" resultMap="departmentMap">
-        SELECT department_id, name, zitadel_org_id FROM department WHERE department_id = #{departmentId}
+        SELECT department_id, name, zitadel_org_id, netbird_group_id FROM department WHERE department_id = #{departmentId}
     </select>
 
     <update id="updateZitadelOrgId">
         UPDATE department SET zitadel_org_id = #{zitadelOrgId} WHERE department_id = #{departmentId}
+    </update>
+
+    <update id="updateNetbirdGroupId">
+        UPDATE department SET netbird_group_id = #{netbirdGroupId} WHERE department_id = #{departmentId}
     </update>
 
     <select id="findWorkload" resultMap="workloadMap">

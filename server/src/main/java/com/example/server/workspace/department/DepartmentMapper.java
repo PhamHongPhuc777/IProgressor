@@ -17,6 +17,8 @@ public interface DepartmentMapper {
 
     void updateZitadelOrgId(@Param("departmentId") UUID departmentId, @Param("zitadelOrgId") String zitadelOrgId);
 
+    void updateNetbirdGroupId(@Param("departmentId") UUID departmentId, @Param("netbirdGroupId") String netbirdGroupId);
+
     List<WorkloadEntry> findWorkload(@Param("departmentId") UUID departmentId);
 
     DepartmentPerformance findPerformance(@Param("departmentId") UUID departmentId);

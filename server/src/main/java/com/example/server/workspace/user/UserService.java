@@ -88,7 +88,7 @@ public class UserService {
         auditService.record("LOCK_USER", "USER", userId);
         // A locked user's API JWT is already rejected (see LocalUserJwtAuthenticationConverter),
         // but their NetBird private-network access is a separate plane -- revoke it too.
-        netBirdClient.removeUserFromGroup(user.zitadelUserId(), user.departmentId());
+        netBirdClient.removeUserFromGroup(user.email(), user.departmentId());
         return userMapper.findSummaryById(userId);
     }
 
@@ -96,7 +96,7 @@ public class UserService {
         User user = getUser(userId);
         userMapper.unlock(userId);
         auditService.record("UNLOCK_USER", "USER", userId);
-        netBirdClient.addUserToGroup(user.zitadelUserId(), user.departmentId());
+        netBirdClient.addUserToGroup(user.email(), user.fullName(), user.departmentId());
         return userMapper.findSummaryById(userId);
     }
 

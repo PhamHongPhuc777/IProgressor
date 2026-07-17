@@ -35,8 +35,9 @@ app:
     dev-client-id: ${ZITADEL_DEV_CLIENT_ID:}
     dev-client-secret: ${ZITADEL_DEV_CLIENT_SECRET:}
   netbird:
-    # No real NetBird instance wired up yet (see integration/netbird) -- blank until one exists.
-    api-base-url: ${NETBIRD_API_BASE_URL:}
+    # NetBird Cloud's API; point at a self-hosted management URL instead if that changes later.
+    api-base-url: ${NETBIRD_API_BASE_URL:https://api.netbird.io}
+    # Personal Access Token from NetBird's dashboard (Users -> Me -> Access Tokens).
     api-token: ${NETBIRD_API_TOKEN:}
     webhook-signing-secret: ${NETBIRD_WEBHOOK_SIGNING_SECRET:dev-netbird-webhook-secret}
 
