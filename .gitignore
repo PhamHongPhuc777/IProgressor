@@ -2,6 +2,9 @@
 .idea/
 .vscode/
 
+# Local secrets (see .env.example for the template)
+.env
+
 # Claude Code local/session-specific state (not meant to be shared)
 .claude/worktrees/
 **/.claude/settings.local.json

@@ -15,6 +15,8 @@ public interface DepartmentMapper {
 
     Department findById(@Param("departmentId") UUID departmentId);
 
+    void updateZitadelOrgId(@Param("departmentId") UUID departmentId, @Param("zitadelOrgId") String zitadelOrgId);
+
     List<WorkloadEntry> findWorkload(@Param("departmentId") UUID departmentId);
 
     DepartmentPerformance findPerformance(@Param("departmentId") UUID departmentId);

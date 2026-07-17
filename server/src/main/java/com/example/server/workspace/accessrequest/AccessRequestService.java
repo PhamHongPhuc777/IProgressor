@@ -6,6 +6,7 @@ import com.example.server.common.PageResponse;
 import com.example.server.common.exception.ConflictException;
 import com.example.server.common.exception.ForbiddenException;
 import com.example.server.common.exception.NotFoundException;
+import com.example.server.integration.netbird.NetBirdClient;
 import com.example.server.integration.zitadel.ZitadelProvisioningClient;
 import com.example.server.security.CurrentUser;
 import com.example.server.workspace.accessrequest.dto.CreateAccessRequestRequest;
@@ -30,6 +31,7 @@ public class AccessRequestService {
     private final RoleService roleService;
     private final AuditService auditService;
     private final ZitadelProvisioningClient zitadelProvisioningClient;
+    private final NetBirdClient netBirdClient;
 
     /**
      * Anonymous submission. If an account already exists for this email it's inferred to be an
@@ -81,10 +83,12 @@ public class AccessRequestService {
             userService.unlock(request.existingUserId());
             accessRequestMapper.approveUnlock(id, reviewerId);
         } else {
-            String zitadelUserId = zitadelProvisioningClient.provisionUser(request.email(), request.fullName());
+            String zitadelUserId = zitadelProvisioningClient.provisionUser(
+                request.email(), request.fullName(), request.departmentId());
             Role staffRole = roleService.getByName("Staff");
             User newUser = userService.provision(request.fullName(), request.email(),
                 request.departmentId(), staffRole.roleId(), zitadelUserId);
+            netBirdClient.addUserToGroup(zitadelUserId, request.departmentId());
             accessRequestMapper.approveNewAccount(id, reviewerId, newUser.userId());
         }
         auditService.record("APPROVE_ACCESS_REQUEST", "ACCESS_REQUEST", id);

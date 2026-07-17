@@ -6,7 +6,15 @@ spring:
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/iprogressor}
     username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:postgres}
+    password: ${DB_PASSWORD:changeme}
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Real Zitadel issuer for both dev and prod -- dev/prod differ only in which
+          # Zitadel org/instance this points to, not in mechanism. No default: startup
+          # must fail fast if this isn't configured, rather than silently accept any token.
+          issuer-uri: ${ZITADEL_ISSUER_URI}
 app:
   admin-bootstrap:
     zitadel-user-id: ${ADMIN_ZITADEL_USER_ID:dev-admin-zitadel-id}
@@ -17,6 +25,20 @@ app:
     shared-secret: ${WEBHOOK_SHARED_SECRET:dev-webhook-shared-secret}
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+  zitadel:
+    # Management API base URL is normally the issuer host itself (Zitadel serves both OIDC
+    # discovery and the Management API from the same instance).
+    management-api-base-url: ${ZITADEL_MANAGEMENT_API_BASE_URL:${ZITADEL_ISSUER_URI}}
+    # PAT for the dedicated Zitadel service user used for provisioning (see integration/zitadel).
+    service-account-token: ${ZITADEL_SERVICE_ACCOUNT_TOKEN:}
+    # Machine user used by DevTokenController's client-credentials convenience endpoint (dev only).
+    dev-client-id: ${ZITADEL_DEV_CLIENT_ID:}
+    dev-client-secret: ${ZITADEL_DEV_CLIENT_SECRET:}
+  netbird:
+    # No real NetBird instance wired up yet (see integration/netbird) -- blank until one exists.
+    api-base-url: ${NETBIRD_API_BASE_URL:}
+    api-token: ${NETBIRD_API_TOKEN:}
+    webhook-signing-secret: ${NETBIRD_WEBHOOK_SIGNING_SECRET:dev-netbird-webhook-secret}
 
 ---
 spring:
@@ -24,18 +46,8 @@ spring:
     activate:
       on-profile: dev
 
-app:
-  dev:
-    jwt-secret: ${DEV_JWT_SECRET:dev-only-signing-secret-change-me-32-bytes-minimum}
-    jwt-issuer: iprogressor-dev
-
 ---
 spring:
   config:
     activate:
       on-profile: prod
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: ${ZITADEL_ISSUER_URI}

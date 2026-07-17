@@ -32,6 +32,11 @@ public class DepartmentService {
         return requireDepartment(departmentId);
     }
 
+    /** Called by ZitadelProvisioningClient after lazily creating the org for this department. */
+    public void updateZitadelOrgId(UUID departmentId, String zitadelOrgId) {
+        departmentMapper.updateZitadelOrgId(departmentId, zitadelOrgId);
+    }
+
     public List<WorkloadEntry> getResourceAllocation(UUID departmentId) {
         AuthenticatedUser actor = CurrentUser.get();
         if (!departmentId.equals(actor.departmentId())) {

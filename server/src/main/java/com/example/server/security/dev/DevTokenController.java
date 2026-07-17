@@ -1,60 +1,66 @@
 package com.example.server.security.dev;
 
 import com.example.server.common.ApiResponse;
-import com.nimbusds.jose.JWSAlgorithm;
-import com.nimbusds.jose.JWSHeader;
-import com.nimbusds.jose.JWSSigner;
-import com.nimbusds.jose.crypto.MACSigner;
-import com.nimbusds.jwt.JWTClaimsSet;
-import com.nimbusds.jwt.SignedJWT;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
+import org.springframework.http.MediaType;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestClient;
 
-import java.nio.charset.StandardCharsets;
-import java.time.Instant;
-import java.util.Date;
+import java.util.Map;
 
 /**
- * Dev-only convenience: mints a JWT shaped like what Zitadel would issue (sub = zitadel_user_id),
- * so every endpoint can be exercised through the real Spring Security filter chain before Zitadel
- * exists. Not part of the documented API surface (see Markdown/API.md) and unreachable outside the
- * "dev" profile.
+ * Dev-only convenience: exchanges the dev machine user's client credentials for a real
+ * Zitadel-issued access token, so the API can be exercised without a browser login flow. Replaces
+ * the old HS256 self-signing stub now that dev auth validates against real Zitadel (see
+ * application.yml's issuer-uri, now unconditional -- see DevJwtDecoderConfig's removal).
+ *
+ * The token this mints authenticates as the machine/service user configured via
+ * app.zitadel.dev-client-id/dev-client-secret. LocalUserJwtAuthenticationConverter still requires
+ * that identity's zitadel_user_id to resolve to a provisioned local `users` row, so exercising a
+ * specific human role still requires either a real browser login or provisioning this machine
+ * identity as a local user with the desired role.
  */
 @RestController
 @Profile("dev")
 @RequestMapping("/api/v1/dev")
 public class DevTokenController {
 
-    @Value("${app.dev.jwt-secret}")
-    private String jwtSecret;
+    private final RestClient restClient = RestClient.create();
 
-    @Value("${app.dev.jwt-issuer}")
-    private String issuer;
+    @Value("${app.zitadel.management-api-base-url}")
+    private String issuerBaseUrl;
 
-    private static final long EXPIRY_SECONDS = 3600;
+    @Value("${app.zitadel.dev-client-id}")
+    private String clientId;
+
+    @Value("${app.zitadel.dev-client-secret}")
+    private String clientSecret;
 
     public record DevTokenResponse(String accessToken, long expiresIn) {
     }
 
     @PostMapping("/token")
-    public ApiResponse<DevTokenResponse> mintToken(@RequestParam String sub) throws Exception {
-        Instant now = Instant.now();
+    public ApiResponse<DevTokenResponse> mintToken() {
+        MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
+        form.add("grant_type", "client_credentials");
+        form.add("client_id", clientId);
+        form.add("client_secret", clientSecret);
+        form.add("scope", "openid profile");
 
-        JWTClaimsSet claims = new JWTClaimsSet.Builder()
-            .subject(sub)
-            .issuer(issuer)
-            .issueTime(Date.from(now))
-            .expirationTime(Date.from(now.plusSeconds(EXPIRY_SECONDS)))
-            .build();
+        Map<String, Object> response = restClient.post()
+            .uri(issuerBaseUrl + "/oauth/v2/token")
+            .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+            .body(form)
+            .retrieve()
+            .body(Map.class);
 
-        JWSSigner signer = new MACSigner(jwtSecret.getBytes(StandardCharsets.UTF_8));
-        SignedJWT signedJWT = new SignedJWT(new JWSHeader(JWSAlgorithm.HS256), claims);
-        signedJWT.sign(signer);
-
-        return ApiResponse.ok(new DevTokenResponse(signedJWT.serialize(), EXPIRY_SECONDS));
+        String accessToken = (String) response.get("access_token");
+        long expiresIn = ((Number) response.get("expires_in")).longValue();
+        return ApiResponse.ok(new DevTokenResponse(accessToken, expiresIn));
     }
 }

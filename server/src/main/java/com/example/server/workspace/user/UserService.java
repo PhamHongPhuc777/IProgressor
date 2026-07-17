@@ -6,6 +6,7 @@ import com.example.server.common.PageResponse;
 import com.example.server.common.exception.BadRequestException;
 import com.example.server.common.exception.ForbiddenException;
 import com.example.server.common.exception.NotFoundException;
+import com.example.server.integration.netbird.NetBirdClient;
 import com.example.server.security.AuthenticatedUser;
 import com.example.server.security.CurrentUser;
 import com.example.server.workspace.role.Role;
@@ -29,6 +30,7 @@ public class UserService {
     private final UserMapper userMapper;
     private final RoleService roleService;
     private final AuditService auditService;
+    private final NetBirdClient netBirdClient;
 
     public UserSummary getById(UUID userId) {
         AuthenticatedUser actor = CurrentUser.get();
@@ -81,16 +83,20 @@ public class UserService {
     }
 
     public UserSummary lock(UUID userId, LockUserRequest request) {
-        requireUser(userId);
+        User user = getUser(userId);
         userMapper.lock(userId, request.reason());
         auditService.record("LOCK_USER", "USER", userId);
+        // A locked user's API JWT is already rejected (see LocalUserJwtAuthenticationConverter),
+        // but their NetBird private-network access is a separate plane -- revoke it too.
+        netBirdClient.removeUserFromGroup(user.zitadelUserId(), user.departmentId());
         return userMapper.findSummaryById(userId);
     }
 
     public UserSummary unlock(UUID userId) {
-        requireUser(userId);
+        User user = getUser(userId);
         userMapper.unlock(userId);
         auditService.record("UNLOCK_USER", "USER", userId);
+        netBirdClient.addUserToGroup(user.zitadelUserId(), user.departmentId());
         return userMapper.findSummaryById(userId);
     }
 

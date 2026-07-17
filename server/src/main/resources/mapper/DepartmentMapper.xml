@@ -39,6 +39,10 @@
         SELECT department_id, name, zitadel_org_id FROM department WHERE department_id = #{departmentId}
     </select>
 
+    <update id="updateZitadelOrgId">
+        UPDATE department SET zitadel_org_id = #{zitadelOrgId} WHERE department_id = #{departmentId}
+    </update>
+
     <select id="findWorkload" resultMap="workloadMap">
         SELECT u.user_id, u.full_name,
             COUNT(*) FILTER (WHERE t.status IS NOT NULL AND t.status &lt;&gt; 'COMPLETED') AS active_task_count,
