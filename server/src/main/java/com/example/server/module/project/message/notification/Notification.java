@@ -1,4 +1,4 @@
-package com.example.server.notification.notification;
+package com.example.server.module.project.notification.notification;
 
 import java.time.Instant;
 import java.util.UUID;

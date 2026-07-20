@@ -1,4 +1,4 @@
-package com.example.server.notification.notification;
+package com.example.server.module.project.notification.notification;
 
 import com.example.server.common.PageRequest;
 import com.example.server.common.PageResponse;
@@ -6,7 +6,7 @@ import com.example.server.common.exception.ForbiddenException;
 import com.example.server.common.exception.NotFoundException;
 import com.example.server.security.AuthenticatedUser;
 import com.example.server.security.CurrentUser;
-import com.example.server.workspace.user.UserService;
+import com.example.server.module.workspace.user.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;

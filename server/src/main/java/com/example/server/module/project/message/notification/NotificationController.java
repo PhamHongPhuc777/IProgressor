@@ -1,11 +1,11 @@
-package com.example.server.notification.notification;
+package com.example.server.module.project.notification.notification;
 
 import com.example.server.common.ApiResponse;
 import com.example.server.common.PageRequest;
 import com.example.server.common.PageResponse;
-import com.example.server.notification.broadcast.BroadcastMessage;
-import com.example.server.notification.broadcast.BroadcastService;
-import com.example.server.notification.broadcast.dto.BroadcastRequest;
+import com.example.server.module.project.notification.broadcast.BroadcastMessage;
+import com.example.server.module.project.notification.broadcast.BroadcastService;
+import com.example.server.module.project.notification.broadcast.dto.BroadcastRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

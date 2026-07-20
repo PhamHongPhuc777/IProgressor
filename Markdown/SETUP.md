@@ -26,14 +26,27 @@ already running on this machine (see `DB_URL`/`DB_USERNAME`/`DB_PASSWORD` below)
 2. In the Zitadel console, create a **Project** (e.g. "IProgressor"), then:
    - A **User Agent (SPA/PKCE)** application for the React client, redirect URI
      `http://localhost:5173/auth/callback`, post-logout `http://localhost:5173`, Dev Mode enabled.
-   - A **Service User** (Users -> Service Users -> New) with a **Personal Access Token** -- this is
-     `ZITADEL_SERVICE_ACCOUNT_TOKEN` below, used by `RealZitadelProvisioningClient` to call the
-     Management API. Grant it an org-admin-level role.
-   - A second **Service User + client credentials** (or reuse the one above) for
-     `DevTokenController`'s convenience endpoint -- `ZITADEL_DEV_CLIENT_ID`/`ZITADEL_DEV_CLIENT_SECRET`.
-3. Note the IAM owner's Zitadel user ID (visible in the console) -- this becomes
-   `ADMIN_ZITADEL_USER_ID` so `V3__seed_admin_bootstrap.sql` links the bootstrap admin row to a
-   real identity. **Without this, the seeded admin cannot log in at all.**
+   - One **Service Account** covering both remaining needs (simplest for local dev -- no need for
+     two separate accounts):
+     1. **Service Accounts -> New**, give it a username + display name (e.g. `iprogressor-backend`),
+        **Create**.
+     2. Open its detail page -> **Personal Access Token** section -> **New** -> leave expiration
+        blank (or set one) -> copy the token from the dialog immediately, it's shown once. This is
+        `ZITADEL_SERVICE_ACCOUNT_TOKEN`, used by `RealZitadelProvisioningClient` to call the
+        Management API.
+     3. Same detail page -> **Actions** (top right) -> **Generate Client Secret** -> copy both the
+        **Client ID** and **Client Secret**, shown once. These are `ZITADEL_DEV_CLIENT_ID` /
+        `ZITADEL_DEV_CLIENT_SECRET`, used by `DevTokenController`'s client-credentials convenience
+        endpoint.
+     4. **Grant it a manager role** -- a PAT alone gets 403 from the Management API without this.
+        Go to the organization's detail page -> the **+** button near "Managers" -> **Add a
+        Manager** -> pick the service account you just created -> role **Org Owner** -> **Add**.
+3. Note the IAM owner's Zitadel user ID -- open **Organization -> Users**, click the bootstrap
+   admin user (`admin@iprogressor.local`), and read the ID either from a copy-ID affordance on that
+   detail page or straight from the browser's address bar (`.../users/<this-is-the-id>`). This
+   becomes `ADMIN_ZITADEL_USER_ID` so `V3__seed_admin_bootstrap.sql` links the bootstrap admin row
+   to a real identity. **Without this, the seeded admin cannot log in at all.** (Console labels
+   shift between Zitadel versions -- if this doesn't match what you see, send a screenshot.)
 
 ## 3. Environment variables
 
@@ -64,8 +77,12 @@ quickstart requires a public domain + Let's Encrypt TLS, which doesn't fit a pur
 remote service) can't reach a local self-hosted Zitadel instance to do OIDC discovery, so
 `idp_id`-based SSO linkage isn't viable here.
 
-1. Sign up at [netbird.io](https://netbird.io) and log into the dashboard.
-2. Go to **Users -> Me**, create a **Personal Access Token** -- this is `NETBIRD_API_TOKEN` below.
+1. Sign up at [netbird.io](https://netbird.io) and log into the dashboard at
+   [app.netbird.io](https://app.netbird.io).
+2. Go to **Team**, select your own user (or create a dedicated service user for API access), then
+   create a **Personal Access Token** there -- this is `NETBIRD_API_TOKEN` below. Set an
+   expiration, then copy the token immediately: NetBird only stores a hashed version, so the plain
+   value is shown exactly once.
 3. That's it for setup -- `RealNetBirdClient` creates NetBird groups (one per department) and
    invites/syncs users on its own via the API when access requests are approved or a user is
    locked/unlocked. No group needs to be created manually.

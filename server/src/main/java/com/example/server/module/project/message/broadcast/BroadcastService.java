@@ -1,6 +1,6 @@
-package com.example.server.notification.broadcast;
+package com.example.server.module.project.notification.broadcast;
 
-import com.example.server.notification.notification.NotificationService;
+import com.example.server.module.project.notification.notification.NotificationService;
 import com.example.server.security.CurrentUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

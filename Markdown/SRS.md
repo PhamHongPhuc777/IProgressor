@@ -105,7 +105,7 @@ Công cụ nội bộ (internal tool), không public ra ngoài internet công kh
 
 - TLS bắt buộc cho toàn bộ kết nối (kể cả nội bộ giữa các service, không chỉ tại edge).
 - Mã hóa dữ liệu at-rest cho PostgreSQL.
-- Không expose ra internet công khai: cổng quản trị Zitadel và PostgreSQL chỉ truy cập qua mạng riêng (NetBird), không mở public.
+- Không expose ra internet công khai: cổng quản trị Zitadel, PostgreSQL, và **bản thân ứng dụng web** (frontend + API) chỉ truy cập qua mạng riêng (NetBird), không mở public. Người dùng trong tổ chức phải kết nối VPN NetBird trước khi truy cập được URL ứng dụng.
 - Secrets (token, mật khẩu DB) lưu trong secret manager, không lưu trong .env/repo.
 - Pentest và quét lỗ hổng dependency (SCA) bắt buộc trước go-live.
 - Sử dụng Spring Security để xác thực bằng JWT
@@ -127,6 +127,7 @@ Dự án hiện đang ở giai đoạn **local development**; hạ tầng produc
 - Môi trường triển khai (dev / staging / prod) và cách chúng khác nhau.
 - Container/orchestration strategy (Docker Compose vs. Kubernetes...).
 - Domain, TLS, và reverse proxy topology cho môi trường thật (không chỉ mạng riêng NetBird như hiện tại).
+- Cơ chế chặn ở tầng network/firewall để giới hạn ứng dụng web (frontend + API) chỉ truy cập được qua NetBird (xem NFR-1) -- quyết định *có làm* đã chốt, nhưng cơ chế cụ thể (security group, iptables, cloud LB rule...) còn tuỳ nhà cung cấp hạ tầng thật, chưa chọn.
 - Chiến lược backup & restore cho PostgreSQL.
 - CI/CD pipeline và rollback strategy.
 
