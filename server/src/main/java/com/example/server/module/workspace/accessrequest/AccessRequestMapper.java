@@ -1,4 +1,4 @@
-package com.example.server.workspace.accessrequest;
+package com.example.server.module.workspace.accessrequest;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;

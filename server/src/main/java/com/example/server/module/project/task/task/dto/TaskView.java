@@ -1,4 +1,4 @@
-package com.example.server.task.task.dto;
+package com.example.server.module.project.task.task.dto;
 
 import java.time.LocalDate;
 import java.util.List;

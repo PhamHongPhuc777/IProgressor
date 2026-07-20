@@ -1,12 +1,12 @@
-package com.example.server.workspace.department;
+package com.example.server.module.workspace.department;
 
 import com.example.server.common.ApiResponse;
 import com.example.server.common.PageRequest;
 import com.example.server.common.PageResponse;
-import com.example.server.workspace.department.dto.DepartmentPerformance;
-import com.example.server.workspace.department.dto.WorkloadEntry;
-import com.example.server.workspace.user.UserService;
-import com.example.server.workspace.user.dto.UserSummary;
+import com.example.server.module.workspace.department.dto.DepartmentPerformance;
+import com.example.server.module.workspace.department.dto.WorkloadEntry;
+import com.example.server.module.workspace.user.UserService;
+import com.example.server.module.workspace.user.dto.UserSummary;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;

@@ -1,4 +1,4 @@
-package com.example.server.task.attachment;
+package com.example.server.module.project.task.attachment;
 
 import com.example.server.common.ApiResponse;
 import lombok.RequiredArgsConstructor;

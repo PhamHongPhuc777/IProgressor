@@ -1,4 +1,4 @@
-package com.example.server.task.comment;
+package com.example.server.module.project.task.comment;
 
 import java.time.Instant;
 import java.util.UUID;

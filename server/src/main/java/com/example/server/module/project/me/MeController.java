@@ -1,9 +1,9 @@
-package com.example.server.me;
+package com.example.server.module.project.me;
 
 import com.example.server.common.ApiResponse;
-import com.example.server.me.dto.MeProfile;
-import com.example.server.me.dto.MyStats;
-import com.example.server.me.dto.UpdateAvatarRequest;
+import com.example.server.module.project.me.dto.MeProfile;
+import com.example.server.module.project.me.dto.MyStats;
+import com.example.server.module.project.me.dto.UpdateAvatarRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;

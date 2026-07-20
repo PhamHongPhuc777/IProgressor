@@ -1,10 +1,10 @@
-package com.example.server.milestone;
+package com.example.server.module.project.milestone;
 
 import com.example.server.audit.AuditService;
 import com.example.server.common.exception.NotFoundException;
-import com.example.server.milestone.dto.CreateMilestoneRequest;
-import com.example.server.milestone.dto.UpdateMilestoneRequest;
-import com.example.server.project.ProjectService;
+import com.example.server.module.project.milestone.dto.CreateMilestoneRequest;
+import com.example.server.module.project.milestone.dto.UpdateMilestoneRequest;
+import com.example.server.module.project.ProjectService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

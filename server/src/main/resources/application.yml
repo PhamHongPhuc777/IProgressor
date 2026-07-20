@@ -3,10 +3,23 @@ spring:
     name: server
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}
+  config:
+    # Real secrets for local dev live here, gitignored, never committed. Absent in CI/prod,
+    # where every ${VAR:default} above is instead supplied as an actual environment variable.
+    import: optional:file:./application-local.yml
+  modulith:
+    # Domain folders sit two levels deep (module/workspace/user, module/project/milestone, ...),
+    # deeper than Modulith's default "direct sub-package of the app class" detection -- explicit
+    # @ApplicationModule package-info.java annotations (at any depth) replace that instead.
+    detection-strategy: explicitly-annotated
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/iprogressor}
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:changeme}
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
   security:
     oauth2:
       resourceserver:
@@ -14,10 +27,10 @@ spring:
           # Real Zitadel issuer for both dev and prod -- dev/prod differ only in which
           # Zitadel org/instance this points to, not in mechanism. No default: startup
           # must fail fast if this isn't configured, rather than silently accept any token.
-          issuer-uri: ${ZITADEL_ISSUER_URI}
+          issuer-uri: ${ZITADEL_ISSUER_URI:http://localhost:8081}
 app:
   admin-bootstrap:
-    zitadel-user-id: ${ADMIN_ZITADEL_USER_ID:dev-admin-zitadel-id}
+    zitadel-user-id: ${ADMIN_ZITADEL_USER_ID:382124313228673027}
     email: ${ADMIN_EMAIL:admin@iprogressor.local}
     full-name: ${ADMIN_FULL_NAME:System Administrator}
     department-name: ${ADMIN_DEPARTMENT_NAME:Administration}
@@ -28,7 +41,7 @@ app:
   zitadel:
     # Management API base URL is normally the issuer host itself (Zitadel serves both OIDC
     # discovery and the Management API from the same instance).
-    management-api-base-url: ${ZITADEL_MANAGEMENT_API_BASE_URL:${ZITADEL_ISSUER_URI}}
+    management-api-base-url: ${ZITADEL_MANAGEMENT_API_BASE_URL:${spring.security.oauth2.resourceserver.jwt.issuer-uri}}
     # PAT for the dedicated Zitadel service user used for provisioning (see integration/zitadel).
     service-account-token: ${ZITADEL_SERVICE_ACCOUNT_TOKEN:}
     # Machine user used by DevTokenController's client-credentials convenience endpoint (dev only).
@@ -37,7 +50,7 @@ app:
   netbird:
     # NetBird Cloud's API; point at a self-hosted management URL instead if that changes later.
     api-base-url: ${NETBIRD_API_BASE_URL:https://api.netbird.io}
-    # Personal Access Token from NetBird's dashboard (Users -> Me -> Access Tokens).
+    # Personal Access Token from NetBird's dashboard (Team -> your user -> Personal Access Tokens).
     api-token: ${NETBIRD_API_TOKEN:}
     webhook-signing-secret: ${NETBIRD_WEBHOOK_SIGNING_SECRET:dev-netbird-webhook-secret}
 

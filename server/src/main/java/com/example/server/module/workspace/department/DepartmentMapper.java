@@ -1,7 +1,7 @@
-package com.example.server.workspace.department;
+package com.example.server.module.workspace.department;
 
-import com.example.server.workspace.department.dto.DepartmentPerformance;
-import com.example.server.workspace.department.dto.WorkloadEntry;
+import com.example.server.module.workspace.department.dto.DepartmentPerformance;
+import com.example.server.module.workspace.department.dto.WorkloadEntry;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 

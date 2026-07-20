@@ -1,4 +1,4 @@
-package com.example.server.module.project.notification.broadcast;
+package com.example.server.module.project.message.broadcast;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;

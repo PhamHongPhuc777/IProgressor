@@ -1,4 +1,4 @@
-package com.example.server.workspace.user;
+package com.example.server.module.workspace.user;
 
 import com.example.server.audit.AuditService;
 import com.example.server.common.PageRequest;
@@ -9,13 +9,13 @@ import com.example.server.common.exception.NotFoundException;
 import com.example.server.integration.netbird.NetBirdClient;
 import com.example.server.security.AuthenticatedUser;
 import com.example.server.security.CurrentUser;
-import com.example.server.workspace.role.Role;
-import com.example.server.workspace.role.RoleService;
-import com.example.server.workspace.user.dto.ChangeRoleRequest;
-import com.example.server.workspace.user.dto.LockUserRequest;
-import com.example.server.workspace.user.dto.NetbirdStatus;
-import com.example.server.workspace.user.dto.UserRoleInfo;
-import com.example.server.workspace.user.dto.UserSummary;
+import com.example.server.module.workspace.role.Role;
+import com.example.server.module.workspace.role.RoleService;
+import com.example.server.module.workspace.user.dto.ChangeRoleRequest;
+import com.example.server.module.workspace.user.dto.LockUserRequest;
+import com.example.server.module.workspace.user.dto.NetbirdStatus;
+import com.example.server.module.workspace.user.dto.UserRoleInfo;
+import com.example.server.module.workspace.user.dto.UserSummary;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

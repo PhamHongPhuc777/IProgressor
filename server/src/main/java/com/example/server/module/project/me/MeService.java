@@ -1,13 +1,13 @@
-package com.example.server.me;
+package com.example.server.module.project.me;
 
-import com.example.server.me.dto.MeProfile;
-import com.example.server.me.dto.MyStats;
+import com.example.server.module.project.me.dto.MeProfile;
+import com.example.server.module.project.me.dto.MyStats;
 import com.example.server.security.AuthenticatedUser;
 import com.example.server.security.CurrentUser;
-import com.example.server.workspace.department.DepartmentService;
-import com.example.server.workspace.role.RoleService;
-import com.example.server.workspace.user.User;
-import com.example.server.workspace.user.UserService;
+import com.example.server.module.workspace.department.DepartmentService;
+import com.example.server.module.workspace.role.RoleService;
+import com.example.server.module.workspace.user.User;
+import com.example.server.module.workspace.user.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

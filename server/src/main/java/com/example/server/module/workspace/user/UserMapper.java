@@ -1,8 +1,8 @@
-package com.example.server.workspace.user;
+package com.example.server.module.workspace.user;
 
-import com.example.server.workspace.user.dto.NetbirdStatus;
-import com.example.server.workspace.user.dto.UserRoleInfo;
-import com.example.server.workspace.user.dto.UserSummary;
+import com.example.server.module.workspace.user.dto.NetbirdStatus;
+import com.example.server.module.workspace.user.dto.UserRoleInfo;
+import com.example.server.module.workspace.user.dto.UserSummary;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 

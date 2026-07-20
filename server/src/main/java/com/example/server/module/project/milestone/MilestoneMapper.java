@@ -1,4 +1,4 @@
-package com.example.server.milestone;
+package com.example.server.module.project.milestone;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;

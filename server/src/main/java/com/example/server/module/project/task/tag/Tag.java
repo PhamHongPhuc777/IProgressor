@@ -1,4 +1,4 @@
-package com.example.server.task.tag;
+package com.example.server.module.project.task.tag;
 
 import java.util.UUID;
 

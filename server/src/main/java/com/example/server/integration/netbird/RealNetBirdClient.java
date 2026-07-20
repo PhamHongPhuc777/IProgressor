@@ -1,7 +1,7 @@
 package com.example.server.integration.netbird;
 
-import com.example.server.workspace.department.Department;
-import com.example.server.workspace.department.DepartmentService;
+import com.example.server.module.workspace.department.Department;
+import com.example.server.module.workspace.department.DepartmentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;

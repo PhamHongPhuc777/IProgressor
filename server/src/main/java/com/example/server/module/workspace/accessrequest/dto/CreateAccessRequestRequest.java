@@ -1,4 +1,4 @@
-package com.example.server.workspace.accessrequest.dto;
+package com.example.server.module.workspace.accessrequest.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

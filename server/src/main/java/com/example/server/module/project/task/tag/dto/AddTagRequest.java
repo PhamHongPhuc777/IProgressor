@@ -1,4 +1,4 @@
-package com.example.server.task.tag.dto;
+package com.example.server.module.project.task.tag.dto;
 
 import jakarta.validation.constraints.NotBlank;
 

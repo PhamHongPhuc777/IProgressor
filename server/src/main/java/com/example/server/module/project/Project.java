@@ -1,4 +1,4 @@
-package com.example.server.project;
+package com.example.server.module.project;
 
 import java.time.LocalDate;
 import java.util.UUID;

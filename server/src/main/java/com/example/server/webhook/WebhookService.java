@@ -2,7 +2,7 @@ package com.example.server.webhook;
 
 import com.example.server.webhook.dto.NetbirdConnectionEventPayload;
 import com.example.server.webhook.dto.ZitadelUserEventPayload;
-import com.example.server.workspace.user.UserService;
+import com.example.server.module.workspace.user.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

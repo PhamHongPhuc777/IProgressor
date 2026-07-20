@@ -1,6 +1,6 @@
-package com.example.server.me.dto;
+package com.example.server.module.project.me.dto;
 
-import com.example.server.workspace.user.User;
+import com.example.server.module.workspace.user.User;
 
 import java.util.Set;
 

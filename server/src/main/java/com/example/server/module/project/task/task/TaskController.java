@@ -1,11 +1,11 @@
-package com.example.server.task.task;
+package com.example.server.module.project.task.task;
 
 import com.example.server.common.ApiResponse;
-import com.example.server.task.tag.dto.AddTagRequest;
-import com.example.server.task.task.dto.CreateTaskRequest;
-import com.example.server.task.task.dto.TaskView;
-import com.example.server.task.task.dto.UpdateTaskRequest;
-import com.example.server.task.task.dto.UpdateTaskStatusRequest;
+import com.example.server.module.project.task.tag.dto.AddTagRequest;
+import com.example.server.module.project.task.task.dto.CreateTaskRequest;
+import com.example.server.module.project.task.task.dto.TaskView;
+import com.example.server.module.project.task.task.dto.UpdateTaskRequest;
+import com.example.server.module.project.task.task.dto.UpdateTaskStatusRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

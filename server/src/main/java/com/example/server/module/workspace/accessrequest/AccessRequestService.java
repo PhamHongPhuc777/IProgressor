@@ -1,4 +1,4 @@
-package com.example.server.workspace.accessrequest;
+package com.example.server.module.workspace.accessrequest;
 
 import com.example.server.audit.AuditService;
 import com.example.server.common.PageRequest;
@@ -9,12 +9,12 @@ import com.example.server.common.exception.NotFoundException;
 import com.example.server.integration.netbird.NetBirdClient;
 import com.example.server.integration.zitadel.ZitadelProvisioningClient;
 import com.example.server.security.CurrentUser;
-import com.example.server.workspace.accessrequest.dto.CreateAccessRequestRequest;
-import com.example.server.workspace.role.Role;
-import com.example.server.workspace.role.RoleService;
-import com.example.server.workspace.user.User;
-import com.example.server.workspace.user.UserService;
-import com.example.server.workspace.user.dto.UserSummary;
+import com.example.server.module.workspace.accessrequest.dto.CreateAccessRequestRequest;
+import com.example.server.module.workspace.role.Role;
+import com.example.server.module.workspace.role.RoleService;
+import com.example.server.module.workspace.user.User;
+import com.example.server.module.workspace.user.UserService;
+import com.example.server.module.workspace.user.dto.UserSummary;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

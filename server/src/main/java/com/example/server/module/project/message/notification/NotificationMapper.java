@@ -1,4 +1,4 @@
-package com.example.server.module.project.notification.notification;
+package com.example.server.module.project.message.notification;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;

@@ -1,4 +1,4 @@
-package com.example.server.project.dto;
+package com.example.server.module.project.dto;
 
 import java.time.LocalDate;
 import java.util.UUID;

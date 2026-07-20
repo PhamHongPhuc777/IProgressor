@@ -1,9 +1,9 @@
-package com.example.server.dashboard;
+package com.example.server.module.project.dashboard;
 
 import com.example.server.common.ApiResponse;
 import com.example.server.common.exception.ForbiddenException;
-import com.example.server.dashboard.dto.DashboardEnterpriseResponse;
-import com.example.server.dashboard.dto.DashboardMeResponse;
+import com.example.server.module.project.dashboard.dto.DashboardEnterpriseResponse;
+import com.example.server.module.project.dashboard.dto.DashboardMeResponse;
 import com.example.server.security.AuthenticatedUser;
 import com.example.server.security.CurrentUser;
 import lombok.RequiredArgsConstructor;

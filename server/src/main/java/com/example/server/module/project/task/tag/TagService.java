@@ -1,4 +1,4 @@
-package com.example.server.task.tag;
+package com.example.server.module.project.task.tag;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

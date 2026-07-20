@@ -1,8 +1,8 @@
-package com.example.server.dashboard.dto;
+package com.example.server.module.project.dashboard.dto;
 
-import com.example.server.me.dto.MyStats;
-import com.example.server.workspace.department.dto.DepartmentPerformance;
-import com.example.server.workspace.department.dto.WorkloadEntry;
+import com.example.server.module.project.me.dto.MyStats;
+import com.example.server.module.workspace.department.dto.DepartmentPerformance;
+import com.example.server.module.workspace.department.dto.WorkloadEntry;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.util.List;

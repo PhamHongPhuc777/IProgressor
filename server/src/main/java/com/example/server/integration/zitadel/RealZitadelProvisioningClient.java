@@ -1,7 +1,7 @@
 package com.example.server.integration.zitadel;
 
-import com.example.server.workspace.department.Department;
-import com.example.server.workspace.department.DepartmentService;
+import com.example.server.module.workspace.department.Department;
+import com.example.server.module.workspace.department.DepartmentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
@@ -42,16 +42,34 @@ public class RealZitadelProvisioningClient implements ZitadelProvisioningClient 
         if (department.zitadelOrgId() != null) {
             return department.zitadelOrgId();
         }
-        Map<String, Object> response = post("/v2/organizations", Map.of("name", department.name()));
-        String orgId = (String) response.get("organizationId");
+        // Org creation is a real external side effect that a later failure in the same
+        // @Transactional method can't undo -- if a previous attempt created the org but then
+        // failed before caching zitadel_org_id, a name-based lookup recovers it instead of
+        // colliding on Zitadel's unique org-name constraint (see RealNetBirdClient.ensureGroup
+        // for the same pattern).
+        String orgId = findOrgIdByName(department.name());
+        if (orgId == null) {
+            Map<String, Object> response = post("/v2/organizations", Map.of("name", department.name()));
+            orgId = (String) response.get("organizationId");
+        }
         departmentService.updateZitadelOrgId(departmentId, orgId);
         return orgId;
+    }
+
+    @SuppressWarnings("unchecked")
+    private String findOrgIdByName(String name) {
+        Map<String, Object> body = Map.of("queries", java.util.List.of(
+            Map.of("nameQuery", Map.of("name", name, "method", "TEXT_QUERY_METHOD_EQUALS"))
+        ));
+        Map<String, Object> response = post("/v2/organizations/_search", body);
+        var results = (java.util.List<Map<String, Object>>) response.get("result");
+        return (results == null || results.isEmpty()) ? null : (String) results.get(0).get("id");
     }
 
     private String createHumanUser(String orgId, String email, String fullName) {
         String[] nameParts = splitName(fullName);
         Map<String, Object> response = post("/v2/users/human", Map.of(
-            "organization", orgId,
+            "organization", Map.of("orgId", orgId),
             "profile", Map.of("givenName", nameParts[0], "familyName", nameParts[1]),
             "email", Map.of("email", email, "isVerified", false),
             // Zitadel requires an initial password; the user resets it via Zitadel's own

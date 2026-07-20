@@ -1,12 +1,12 @@
-package com.example.server.project;
+package com.example.server.module.project;
 
 import com.example.server.audit.AuditService;
 import com.example.server.common.PageRequest;
 import com.example.server.common.PageResponse;
 import com.example.server.common.exception.ForbiddenException;
 import com.example.server.common.exception.NotFoundException;
-import com.example.server.project.dto.CreateProjectRequest;
-import com.example.server.project.dto.UpdateProjectRequest;
+import com.example.server.module.project.dto.CreateProjectRequest;
+import com.example.server.module.project.dto.UpdateProjectRequest;
 import com.example.server.security.AuthenticatedUser;
 import com.example.server.security.CurrentUser;
 import lombok.RequiredArgsConstructor;

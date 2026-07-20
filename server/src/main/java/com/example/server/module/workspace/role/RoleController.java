@@ -1,7 +1,7 @@
-package com.example.server.workspace.role;
+package com.example.server.module.workspace.role;
 
 import com.example.server.common.ApiResponse;
-import com.example.server.workspace.role.dto.UpdateRolePermissionsRequest;
+import com.example.server.module.workspace.role.dto.UpdateRolePermissionsRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;

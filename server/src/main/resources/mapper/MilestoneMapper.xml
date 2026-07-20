@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.example.server.milestone.MilestoneMapper">
+<mapper namespace="com.example.server.module.project.milestone.MilestoneMapper">
 
-    <resultMap id="milestoneMap" type="com.example.server.milestone.Milestone">
+    <resultMap id="milestoneMap" type="com.example.server.module.project.milestone.Milestone">
         <constructor>
             <idArg column="milestone_id" javaType="java.util.UUID" name="milestoneId"/>
             <arg column="project_id" javaType="java.util.UUID" name="projectId"/>

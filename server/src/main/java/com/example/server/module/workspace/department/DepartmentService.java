@@ -1,11 +1,11 @@
-package com.example.server.workspace.department;
+package com.example.server.module.workspace.department;
 
 import com.example.server.common.exception.ForbiddenException;
 import com.example.server.common.exception.NotFoundException;
 import com.example.server.security.AuthenticatedUser;
 import com.example.server.security.CurrentUser;
-import com.example.server.workspace.department.dto.DepartmentPerformance;
-import com.example.server.workspace.department.dto.WorkloadEntry;
+import com.example.server.module.workspace.department.dto.DepartmentPerformance;
+import com.example.server.module.workspace.department.dto.WorkloadEntry;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

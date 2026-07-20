@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.example.server.workspace.role.RoleMapper">
+<mapper namespace="com.example.server.module.workspace.role.RoleMapper">
 
-    <resultMap id="roleMap" type="com.example.server.workspace.role.Role">
+    <resultMap id="roleMap" type="com.example.server.module.workspace.role.Role">
         <constructor>
             <idArg column="role_id" javaType="java.util.UUID" name="roleId"/>
             <arg column="name" javaType="string" name="name"/>
         </constructor>
     </resultMap>
 
-    <resultMap id="permissionMap" type="com.example.server.workspace.role.Permission">
+    <resultMap id="permissionMap" type="com.example.server.module.workspace.role.Permission">
         <constructor>
             <idArg column="permission_id" javaType="java.util.UUID" name="permissionId"/>
             <arg column="key" javaType="string" name="key"/>

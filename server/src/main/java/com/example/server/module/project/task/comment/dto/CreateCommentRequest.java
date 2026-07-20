@@ -1,4 +1,4 @@
-package com.example.server.task.comment.dto;
+package com.example.server.module.project.task.comment.dto;
 
 import jakarta.validation.constraints.NotBlank;
 

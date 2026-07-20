@@ -1,6 +1,6 @@
-package com.example.server.dashboard.dto;
+package com.example.server.module.project.dashboard.dto;
 
-import com.example.server.workspace.department.dto.DepartmentPerformance;
+import com.example.server.module.workspace.department.dto.DepartmentPerformance;
 
 import java.util.List;
 

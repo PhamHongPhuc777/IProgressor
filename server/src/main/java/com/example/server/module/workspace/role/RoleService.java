@@ -1,4 +1,4 @@
-package com.example.server.workspace.role;
+package com.example.server.module.workspace.role;
 
 import com.example.server.audit.AuditService;
 import com.example.server.common.exception.ForbiddenException;

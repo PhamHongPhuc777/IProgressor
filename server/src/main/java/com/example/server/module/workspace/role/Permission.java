@@ -1,4 +1,4 @@
-package com.example.server.workspace.role;
+package com.example.server.module.workspace.role;
 
 import java.util.UUID;
 

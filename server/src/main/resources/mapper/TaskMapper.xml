@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.example.server.task.task.TaskMapper">
+<mapper namespace="com.example.server.module.project.task.task.TaskMapper">
 
-    <resultMap id="taskRowMap" type="com.example.server.task.task.dto.TaskRow">
+    <resultMap id="taskRowMap" type="com.example.server.module.project.task.task.dto.TaskRow">
         <constructor>
             <idArg column="task_id" javaType="java.util.UUID" name="taskId"/>
             <arg column="project_id" javaType="java.util.UUID" name="projectId"/>
@@ -19,7 +19,7 @@
         </constructor>
     </resultMap>
 
-    <resultMap id="taskTagRowMap" type="com.example.server.task.task.dto.TaskTagRow">
+    <resultMap id="taskTagRowMap" type="com.example.server.module.project.task.task.dto.TaskTagRow">
         <constructor>
             <idArg column="task_id" javaType="java.util.UUID" name="taskId"/>
             <arg column="tag_name" javaType="string" name="tagName"/>

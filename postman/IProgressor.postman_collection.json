@@ -1,0 +1,477 @@
+{
+  "info": {
+    "name": "IProgressor API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Local dev collection for the IProgressor Spring Boot API. Set {{baseUrl}} and mint {{accessToken}} via the Dev folder first."
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "accessToken", "value": "" },
+    { "key": "webhookSecret", "value": "dev-webhook-shared-secret" },
+    { "key": "departmentId", "value": "" },
+    { "key": "projectId", "value": "" },
+    { "key": "taskId", "value": "" },
+    { "key": "userId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Dev",
+      "description": "No auth needed. Mint a real Zitadel-issued token here, then copy access_token into the {{accessToken}} collection variable.",
+      "item": [
+        {
+          "name": "Mint dev token",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/dev/token"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Access Requests",
+      "item": [
+        {
+          "name": "Submit access request (public)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/v1/access-requests",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Jane Doe\",\n  \"email\": \"jane.doe@example.com\",\n  \"departmentId\": \"{{departmentId}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "List access requests",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/access-requests?departmentId={{departmentId}}&status=PENDING&page=0&size=20"
+          }
+        },
+        {
+          "name": "Get access request by id",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/access-requests/:id" }
+        },
+        {
+          "name": "Approve access request",
+          "request": { "method": "POST", "url": "{{baseUrl}}/api/v1/access-requests/:id/approve" }
+        },
+        {
+          "name": "Reject access request",
+          "request": { "method": "POST", "url": "{{baseUrl}}/api/v1/access-requests/:id/reject" }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "List users (company-wide)",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/users?departmentId={{departmentId}}&page=0&size=20" }
+        },
+        {
+          "name": "Get user by id",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/users/{{userId}}" }
+        },
+        {
+          "name": "Change user role",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/v1/users/{{userId}}/role",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roleId\": \"00000000-0000-0000-0000-000000000000\",\n  \"confirm\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Lock user",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/v1/users/{{userId}}/lock",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Testing lock flow\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Unlock user",
+          "request": { "method": "POST", "url": "{{baseUrl}}/api/v1/users/{{userId}}/unlock" }
+        },
+        {
+          "name": "Get user NetBird status",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/users/{{userId}}/netbird-status" }
+        }
+      ]
+    },
+    {
+      "name": "Departments",
+      "item": [
+        { "name": "List departments", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/departments" } },
+        {
+          "name": "List department members",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/departments/{{departmentId}}/members?page=0&size=20" }
+        },
+        {
+          "name": "Resource allocation",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/departments/{{departmentId}}/resource-allocation" }
+        },
+        {
+          "name": "Performance risk",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/departments/{{departmentId}}/performance-risk" }
+        }
+      ]
+    },
+    {
+      "name": "Roles",
+      "item": [
+        { "name": "List roles", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/roles" } },
+        { "name": "List permissions", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/permissions" } },
+        {
+          "name": "Get role permissions",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/roles/:id/permissions" }
+        },
+        {
+          "name": "Update role permissions",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/v1/roles/:id/permissions",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"permissionIds\": []\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Projects",
+      "item": [
+        {
+          "name": "Search projects",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/projects?departmentId={{departmentId}}&page=0&size=20" }
+        },
+        { "name": "Get project by id", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/projects/{{projectId}}" } },
+        {
+          "name": "Create project",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/v1/projects",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"New Project\",\n  \"departmentId\": \"{{departmentId}}\",\n  \"ownerId\": null,\n  \"status\": \"ACTIVE\",\n  \"startDate\": \"2026-08-01\",\n  \"endDate\": \"2026-12-31\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Update project",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/v1/projects/{{projectId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Renamed Project\",\n  \"status\": \"ACTIVE\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        { "name": "Archive project", "request": { "method": "DELETE", "url": "{{baseUrl}}/api/v1/projects/{{projectId}}" } }
+      ]
+    },
+    {
+      "name": "Milestones",
+      "item": [
+        {
+          "name": "List milestones for project",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/projects/{{projectId}}/milestones" }
+        },
+        {
+          "name": "Create milestone",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/v1/projects/{{projectId}}/milestones",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Phase 1\",\n  \"dueDate\": \"2026-09-01\",\n  \"status\": \"NOT_STARTED\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Update milestone",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/v1/milestones/:id",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Phase 1 (renamed)\",\n  \"dueDate\": \"2026-09-15\",\n  \"status\": \"IN_PROGRESS\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        { "name": "Delete milestone", "request": { "method": "DELETE", "url": "{{baseUrl}}/api/v1/milestones/:id" } }
+      ]
+    },
+    {
+      "name": "Tasks",
+      "item": [
+        {
+          "name": "List tasks for project",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/projects/{{projectId}}/tasks" }
+        },
+        {
+          "name": "Create task",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/v1/projects/{{projectId}}/tasks",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"New Task\",\n  \"description\": \"Task description\",\n  \"milestoneId\": null,\n  \"parentTaskId\": null,\n  \"assigneeId\": null,\n  \"startDate\": \"2026-08-01\",\n  \"dueDate\": \"2026-08-15\",\n  \"status\": \"NOT_STARTED\",\n  \"priority\": \"MEDIUM\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        { "name": "Get task by id", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/tasks/{{taskId}}" } },
+        {
+          "name": "Update task",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/v1/tasks/{{taskId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated Task Title\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Update task status",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/v1/tasks/{{taskId}}/status",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"COMPLETED\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        { "name": "Delete task", "request": { "method": "DELETE", "url": "{{baseUrl}}/api/v1/tasks/{{taskId}}" } },
+        {
+          "name": "Add tag to task",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/v1/tasks/{{taskId}}/tags",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"urgent\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Remove tag from task",
+          "request": { "method": "DELETE", "url": "{{baseUrl}}/api/v1/tasks/{{taskId}}/tags/:tagId" }
+        }
+      ]
+    },
+    {
+      "name": "Comments",
+      "item": [
+        {
+          "name": "List comments for task",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/tasks/{{taskId}}/comments" }
+        },
+        {
+          "name": "Create comment",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/v1/tasks/{{taskId}}/comments",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Looks good to me.\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Update comment",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/v1/tasks/{{taskId}}/comments/:commentId",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Corrected comment text.\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Delete comment",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/v1/tasks/{{taskId}}/comments/:commentId"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Attachments",
+      "item": [
+        {
+          "name": "List attachments for task",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/tasks/{{taskId}}/attachments" }
+        },
+        {
+          "name": "Upload attachment",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/tasks/{{taskId}}/attachments",
+            "body": {
+              "mode": "formdata",
+              "formdata": [{ "key": "file", "type": "file", "value": "" }]
+            }
+          }
+        },
+        { "name": "Delete attachment", "request": { "method": "DELETE", "url": "{{baseUrl}}/api/v1/attachments/:id" } }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "Stream notifications (SSE)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "text/event-stream" }],
+            "url": "{{baseUrl}}/api/v1/notifications/stream"
+          }
+        },
+        {
+          "name": "Mark notification read",
+          "request": { "method": "PATCH", "url": "{{baseUrl}}/api/v1/notifications/:id/read" }
+        },
+        {
+          "name": "Send broadcast",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/v1/notifications/broadcast",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"departmentId\": \"{{departmentId}}\",\n  \"content\": \"Company-wide announcement.\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Me",
+      "item": [
+        { "name": "Get my profile", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/me" } },
+        {
+          "name": "Update my avatar",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/v1/me/avatar",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"avatarUrl\": \"https://example.com/avatar.png\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        { "name": "Get my task stats", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/me/stats" } }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        { "name": "My dashboard", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/dashboard/me" } },
+        { "name": "Enterprise dashboard", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/dashboard/enterprise" } }
+      ]
+    },
+    {
+      "name": "Audit",
+      "item": [
+        {
+          "name": "Search audit logs",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/audit-logs?date=2026-07-20&page=0&size=20" }
+        },
+        { "name": "Days with audit data", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/audit-logs/days" } },
+        {
+          "name": "Export audit logs (CSV)",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/audit-logs/export?date=2026-07-20&format=csv" }
+        }
+      ]
+    },
+    {
+      "name": "Webhooks",
+      "description": "Guarded by X-Webhook-Secret, not bearer auth -- see WebhookSharedSecretFilter.",
+      "item": [
+        {
+          "name": "Zitadel user event",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Webhook-Secret", "value": "{{webhookSecret}}" }
+            ],
+            "url": "{{baseUrl}}/api/v1/webhooks/zitadel/user-events",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"zitadelUserId\": \"382124313228673027\",\n  \"eventType\": \"user.locked\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "NetBird connection event",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Webhook-Secret", "value": "{{webhookSecret}}" }
+            ],
+            "url": "{{baseUrl}}/api/v1/webhooks/netbird/connection-events",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"zitadelUserId\": \"382124313228673027\",\n  \"connected\": true,\n  \"timestamp\": \"2026-07-20T03:00:00Z\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

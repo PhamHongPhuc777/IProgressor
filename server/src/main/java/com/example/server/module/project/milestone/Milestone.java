@@ -1,4 +1,4 @@
-package com.example.server.milestone;
+package com.example.server.module.project.milestone;
 
 import java.time.LocalDate;
 import java.util.UUID;

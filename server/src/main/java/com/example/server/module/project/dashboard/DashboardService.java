@@ -1,16 +1,16 @@
-package com.example.server.dashboard;
+package com.example.server.module.project.dashboard;
 
-import com.example.server.dashboard.dto.DashboardEnterpriseResponse;
-import com.example.server.dashboard.dto.DashboardMeResponse;
-import com.example.server.me.MeService;
-import com.example.server.me.dto.MyStats;
-import com.example.server.project.ProjectService;
+import com.example.server.module.project.dashboard.dto.DashboardEnterpriseResponse;
+import com.example.server.module.project.dashboard.dto.DashboardMeResponse;
+import com.example.server.module.project.me.MeService;
+import com.example.server.module.project.me.dto.MyStats;
+import com.example.server.module.project.ProjectService;
 import com.example.server.security.AuthenticatedUser;
 import com.example.server.security.CurrentUser;
-import com.example.server.workspace.department.Department;
-import com.example.server.workspace.department.DepartmentService;
-import com.example.server.workspace.department.dto.DepartmentPerformance;
-import com.example.server.workspace.department.dto.WorkloadEntry;
+import com.example.server.module.workspace.department.Department;
+import com.example.server.module.workspace.department.DepartmentService;
+import com.example.server.module.workspace.department.dto.DepartmentPerformance;
+import com.example.server.module.workspace.department.dto.WorkloadEntry;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

@@ -1,4 +1,4 @@
-package com.example.server.task.comment;
+package com.example.server.module.project.task.comment;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -15,4 +15,8 @@ public interface CommentMapper {
                 @Param("authorId") UUID authorId, @Param("content") String content);
 
     Comment findById(@Param("commentId") UUID commentId);
+
+    void update(@Param("commentId") UUID commentId, @Param("content") String content);
+
+    void delete(@Param("commentId") UUID commentId);
 }

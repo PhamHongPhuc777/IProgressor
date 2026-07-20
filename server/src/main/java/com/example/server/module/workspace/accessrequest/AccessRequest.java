@@ -1,4 +1,4 @@
-package com.example.server.workspace.accessrequest;
+package com.example.server.module.workspace.accessrequest;
 
 import java.time.Instant;
 import java.util.UUID;

@@ -1,19 +1,19 @@
-package com.example.server.task.task;
+package com.example.server.module.project.task.task;
 
 import com.example.server.audit.AuditService;
 import com.example.server.common.exception.ForbiddenException;
 import com.example.server.common.exception.NotFoundException;
-import com.example.server.project.ProjectService;
+import com.example.server.module.project.ProjectService;
 import com.example.server.security.AuthenticatedUser;
 import com.example.server.security.CurrentUser;
-import com.example.server.task.tag.Tag;
-import com.example.server.task.tag.TagService;
-import com.example.server.task.task.dto.CreateTaskRequest;
-import com.example.server.task.task.dto.TaskRow;
-import com.example.server.task.task.dto.TaskTagRow;
-import com.example.server.task.task.dto.TaskView;
-import com.example.server.task.task.dto.UpdateTaskRequest;
-import com.example.server.task.task.dto.UpdateTaskStatusRequest;
+import com.example.server.module.project.task.tag.Tag;
+import com.example.server.module.project.task.tag.TagService;
+import com.example.server.module.project.task.task.dto.CreateTaskRequest;
+import com.example.server.module.project.task.task.dto.TaskRow;
+import com.example.server.module.project.task.task.dto.TaskTagRow;
+import com.example.server.module.project.task.task.dto.TaskView;
+import com.example.server.module.project.task.task.dto.UpdateTaskRequest;
+import com.example.server.module.project.task.task.dto.UpdateTaskStatusRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

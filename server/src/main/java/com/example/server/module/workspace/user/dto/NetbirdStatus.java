@@ -1,4 +1,4 @@
-package com.example.server.workspace.user.dto;
+package com.example.server.module.workspace.user.dto;
 
 import java.time.Instant;
 

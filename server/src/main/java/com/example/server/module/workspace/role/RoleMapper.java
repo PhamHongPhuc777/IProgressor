@@ -1,4 +1,4 @@
-package com.example.server.workspace.role;
+package com.example.server.module.workspace.role;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;

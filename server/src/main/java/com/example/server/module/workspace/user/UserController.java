@@ -1,12 +1,12 @@
-package com.example.server.workspace.user;
+package com.example.server.module.workspace.user;
 
 import com.example.server.common.ApiResponse;
 import com.example.server.common.PageRequest;
 import com.example.server.common.PageResponse;
-import com.example.server.workspace.user.dto.ChangeRoleRequest;
-import com.example.server.workspace.user.dto.LockUserRequest;
-import com.example.server.workspace.user.dto.NetbirdStatus;
-import com.example.server.workspace.user.dto.UserSummary;
+import com.example.server.module.workspace.user.dto.ChangeRoleRequest;
+import com.example.server.module.workspace.user.dto.LockUserRequest;
+import com.example.server.module.workspace.user.dto.NetbirdStatus;
+import com.example.server.module.workspace.user.dto.UserSummary;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;

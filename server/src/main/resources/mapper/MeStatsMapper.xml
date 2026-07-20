@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.example.server.me.MeStatsMapper">
+<mapper namespace="com.example.server.module.project.me.MeStatsMapper">
 
-    <resultMap id="myStatsMap" type="com.example.server.me.dto.MyStats">
+    <resultMap id="myStatsMap" type="com.example.server.module.project.me.dto.MyStats">
         <constructor>
             <arg column="assigned_task_count" javaType="_long" name="assignedTaskCount"/>
             <arg column="completed_task_count" javaType="_long" name="completedTaskCount"/>

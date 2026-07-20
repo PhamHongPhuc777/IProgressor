@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.example.server.task.comment.CommentMapper">
+<mapper namespace="com.example.server.module.project.task.comment.CommentMapper">
 
-    <resultMap id="commentMap" type="com.example.server.task.comment.Comment">
+    <resultMap id="commentMap" type="com.example.server.module.project.task.comment.Comment">
         <constructor>
             <idArg column="comment_id" javaType="java.util.UUID" name="commentId"/>
             <arg column="task_id" javaType="java.util.UUID" name="taskId"/>
@@ -36,5 +36,13 @@
         INSERT INTO comment (comment_id, task_id, author_id, content)
         VALUES (#{commentId}, #{taskId}, #{authorId}, #{content})
     </insert>
+
+    <update id="update">
+        UPDATE comment SET content = #{content} WHERE comment_id = #{commentId}
+    </update>
+
+    <delete id="delete">
+        DELETE FROM comment WHERE comment_id = #{commentId}
+    </delete>
 
 </mapper>

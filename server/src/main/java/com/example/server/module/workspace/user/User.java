@@ -1,4 +1,4 @@
-package com.example.server.workspace.user;
+package com.example.server.module.workspace.user;
 
 import java.time.Instant;
 import java.util.UUID;

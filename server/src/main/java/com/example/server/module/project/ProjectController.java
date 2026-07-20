@@ -1,10 +1,10 @@
-package com.example.server.project;
+package com.example.server.module.project;
 
 import com.example.server.common.ApiResponse;
 import com.example.server.common.PageRequest;
 import com.example.server.common.PageResponse;
-import com.example.server.project.dto.CreateProjectRequest;
-import com.example.server.project.dto.UpdateProjectRequest;
+import com.example.server.module.project.dto.CreateProjectRequest;
+import com.example.server.module.project.dto.UpdateProjectRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

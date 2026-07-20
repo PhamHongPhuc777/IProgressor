@@ -1,4 +1,4 @@
-package com.example.server.milestone.dto;
+package com.example.server.module.project.milestone.dto;
 
 import java.time.LocalDate;
 

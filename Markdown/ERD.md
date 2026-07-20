@@ -434,6 +434,8 @@ Khóa tài khoản là hành động ở **tầng Zitadel**, không phải flag 
 | `task.deadline.update` | Chỉnh deadline task | PM, Admin |
 | `task.description.update` | Chỉnh mô tả task | PM, Admin |
 | `task.comment.create` | Bình luận trên bất kỳ task nào | Tất cả |
+| `task.comment.update` | Sửa bình luận của chính mình (không phải của người khác) | Tất cả |
+| `task.comment.delete` | Xoá bình luận của chính mình (không phải của người khác) | Tất cả |
 | `task.attachment.upload` | Đính kèm file SharePoint (giới hạn tốc độ) | Tất cả |
 | `workspace.members.view` | Xem thành viên workspace của mình | Tất cả |
 | `enterprise.members.view` | Xem thành viên toàn bộ workspace | Leader, Admin |
@@ -441,7 +443,7 @@ Khóa tài khoản là hành động ở **tầng Zitadel**, không phải flag 
 | `resource_allocation.view` | Xem workload/phân bổ nguồn lực | PM |
 | `performance_risk.view` | Xem hiệu suất & rủi ro xuyên phòng ban | Leader |
 | `notification.receive_realtime` | Nhận luồng thông báo real-time | Tất cả |
-| `broadcast_message.send` | Gửi thông báo toàn workspace | Leader |
+| `broadcast_message.send` | Gửi thông báo toàn workspace | Leader, Admin |
 | `profile.avatar.update` | Đổi ảnh đại diện | Tất cả |
 | `access_request.manage` | Duyệt/từ chối yêu cầu truy cập & mở khóa | Admin |
 | `user.lock_unlock` | Khóa/mở khóa tài khoản | Admin |

@@ -1,7 +1,8 @@
-package com.example.server.task.comment;
+package com.example.server.module.project.task.comment;
 
 import com.example.server.common.ApiResponse;
-import com.example.server.task.comment.dto.CreateCommentRequest;
+import com.example.server.module.project.task.comment.dto.CreateCommentRequest;
+import com.example.server.module.project.task.comment.dto.UpdateCommentRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -31,5 +32,21 @@ public class CommentController {
         @PathVariable("taskId") UUID taskId, @Valid @RequestBody CreateCommentRequest request
     ) {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(commentService.create(taskId, request)));
+    }
+
+    @PatchMapping("/{commentId}")
+    @PreAuthorize("hasAuthority('task.comment.update')")
+    public ApiResponse<Comment> update(
+        @PathVariable("taskId") UUID taskId, @PathVariable("commentId") UUID commentId,
+        @Valid @RequestBody UpdateCommentRequest request
+    ) {
+        return ApiResponse.ok(commentService.update(taskId, commentId, request));
+    }
+
+    @DeleteMapping("/{commentId}")
+    @PreAuthorize("hasAuthority('task.comment.delete')")
+    public ResponseEntity<Void> delete(@PathVariable("taskId") UUID taskId, @PathVariable("commentId") UUID commentId) {
+        commentService.delete(taskId, commentId);
+        return ResponseEntity.noContent().build();
     }
 }

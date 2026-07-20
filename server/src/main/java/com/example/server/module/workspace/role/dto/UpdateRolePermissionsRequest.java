@@ -1,4 +1,4 @@
-package com.example.server.workspace.role.dto;
+package com.example.server.module.workspace.role.dto;
 
 import jakarta.validation.constraints.NotNull;
 

@@ -1,4 +1,4 @@
-package com.example.server.workspace.department.dto;
+package com.example.server.module.workspace.department.dto;
 
 import java.util.UUID;
 

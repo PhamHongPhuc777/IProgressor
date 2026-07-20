@@ -1,6 +1,6 @@
-package com.example.server.me;
+package com.example.server.module.project.me;
 
-import com.example.server.me.dto.MyStats;
+import com.example.server.module.project.me.dto.MyStats;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 

@@ -1,4 +1,4 @@
-package com.example.server.module.project.notification.notification;
+package com.example.server.module.project.message.notification;
 
 import com.example.server.common.PageRequest;
 import com.example.server.common.PageResponse;

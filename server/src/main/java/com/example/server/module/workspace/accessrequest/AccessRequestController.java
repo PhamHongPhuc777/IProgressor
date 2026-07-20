@@ -1,9 +1,9 @@
-package com.example.server.workspace.accessrequest;
+package com.example.server.module.workspace.accessrequest;
 
 import com.example.server.common.ApiResponse;
 import com.example.server.common.PageRequest;
 import com.example.server.common.PageResponse;
-import com.example.server.workspace.accessrequest.dto.CreateAccessRequestRequest;
+import com.example.server.module.workspace.accessrequest.dto.CreateAccessRequestRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

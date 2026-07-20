@@ -1,4 +1,4 @@
-package com.example.server.task.attachment;
+package com.example.server.module.project.task.attachment;
 
 import com.example.server.audit.AuditService;
 import com.example.server.common.exception.ForbiddenException;
@@ -7,8 +7,8 @@ import com.example.server.integration.storage.DocumentStorageClient;
 import com.example.server.integration.storage.StoredFile;
 import com.example.server.security.AuthenticatedUser;
 import com.example.server.security.CurrentUser;
-import com.example.server.task.task.TaskService;
-import com.example.server.task.task.dto.TaskRow;
+import com.example.server.module.project.task.task.TaskService;
+import com.example.server.module.project.task.task.dto.TaskRow;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;

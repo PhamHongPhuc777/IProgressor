@@ -1,7 +1,7 @@
-package com.example.server.task.task;
+package com.example.server.module.project.task.task;
 
-import com.example.server.task.task.dto.TaskRow;
-import com.example.server.task.task.dto.TaskTagRow;
+import com.example.server.module.project.task.task.dto.TaskRow;
+import com.example.server.module.project.task.task.dto.TaskTagRow;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 

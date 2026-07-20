@@ -1,4 +1,4 @@
-package com.example.server.module.project.notification.notification;
+package com.example.server.module.project.message.notification;
 
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;

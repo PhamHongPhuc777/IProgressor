@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.example.server.workspace.accessrequest.AccessRequestMapper">
+<mapper namespace="com.example.server.module.workspace.accessrequest.AccessRequestMapper">
 
-    <resultMap id="accessRequestMap" type="com.example.server.workspace.accessrequest.AccessRequest">
+    <resultMap id="accessRequestMap" type="com.example.server.module.workspace.accessrequest.AccessRequest">
         <constructor>
             <idArg column="request_id" javaType="java.util.UUID" name="requestId"/>
             <arg column="request_type" javaType="string" name="requestType"/>
