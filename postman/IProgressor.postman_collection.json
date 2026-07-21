@@ -147,12 +147,12 @@
         {
           "name": "Update role permissions",
           "request": {
-            "method": "PUT",
+            "method": "PATCH",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "url": "{{baseUrl}}/api/v1/roles/:id/permissions",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"permissionIds\": []\n}",
+              "raw": "{\n  \"grant\": [],\n  \"revoke\": []\n}",
               "options": { "raw": { "language": "json" } }
             }
           }

@@ -41,16 +41,22 @@
         ORDER BY p.key
     </select>
 
-    <delete id="deletePermissionsForRole">
-        DELETE FROM role_permission WHERE role_id = #{roleId}
-    </delete>
-
-    <insert id="insertRolePermissions">
+    <insert id="grantPermissions">
         INSERT INTO role_permission (role_id, permission_id)
         VALUES
         <foreach collection="permissionIds" item="permissionId" separator=",">
             (#{roleId}, #{permissionId})
         </foreach>
+        ON CONFLICT DO NOTHING
     </insert>
+
+    <delete id="revokePermissions">
+        DELETE FROM role_permission
+        WHERE role_id = #{roleId}
+        AND permission_id IN
+        <foreach collection="permissionIds" item="permissionId" open="(" separator="," close=")">
+            #{permissionId}
+        </foreach>
+    </delete>
 
 </mapper>

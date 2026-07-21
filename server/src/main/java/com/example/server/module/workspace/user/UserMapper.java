@@ -49,4 +49,8 @@ public interface UserMapper {
     void updateNetbirdStatusByZitadelUserId(@Param("zitadelUserId") String zitadelUserId,
                                              @Param("connected") boolean connected,
                                              @Param("lastSeen") Instant lastSeen);
+
+    void updateNetbirdStatusByEmail(@Param("email") String email,
+                                     @Param("connected") boolean connected,
+                                     @Param("lastSeen") Instant lastSeen);
 }

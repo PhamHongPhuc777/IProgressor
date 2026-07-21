@@ -143,6 +143,13 @@ public class UserService {
         userMapper.updateNetbirdStatusByZitadelUserId(zitadelUserId, connected, lastSeen);
     }
 
+    /** Polling fallback for {@link NetbirdStatusPollingJob} -- see its class comment for why this exists. */
+    public void syncNetbirdStatusFromPolling() {
+        for (var status : netBirdClient.pollConnectionStatuses()) {
+            userMapper.updateNetbirdStatusByEmail(status.email(), status.connected(), status.lastSeen());
+        }
+    }
+
     private UserSummary requireUser(UUID userId) {
         UserSummary user = userMapper.findSummaryById(userId);
         if (user == null) {

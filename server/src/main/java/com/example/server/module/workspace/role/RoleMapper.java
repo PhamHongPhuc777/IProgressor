@@ -19,7 +19,7 @@ public interface RoleMapper {
 
     List<Permission> findPermissionsForRole(@Param("roleId") UUID roleId);
 
-    void deletePermissionsForRole(@Param("roleId") UUID roleId);
+    void grantPermissions(@Param("roleId") UUID roleId, @Param("permissionIds") List<UUID> permissionIds);
 
-    void insertRolePermissions(@Param("roleId") UUID roleId, @Param("permissionIds") List<UUID> permissionIds);
+    void revokePermissions(@Param("roleId") UUID roleId, @Param("permissionIds") List<UUID> permissionIds);
 }

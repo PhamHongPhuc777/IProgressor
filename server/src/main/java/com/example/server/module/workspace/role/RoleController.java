@@ -35,11 +35,11 @@ public class RoleController {
         return ApiResponse.ok(roleService.getRolePermissions(id));
     }
 
-    @PutMapping("/roles/{id}/permissions")
+    @PatchMapping("/roles/{id}/permissions")
     @PreAuthorize("hasAuthority('authority_matrix.manage')")
     public ApiResponse<List<Permission>> updateRolePermissions(
         @PathVariable("id") UUID id, @Valid @RequestBody UpdateRolePermissionsRequest request
     ) {
-        return ApiResponse.ok(roleService.updateRolePermissions(id, request.permissionIds()));
+        return ApiResponse.ok(roleService.updateRolePermissions(id, request.grant(), request.revoke()));
     }
 }

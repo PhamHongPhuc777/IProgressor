@@ -8,7 +8,9 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -48,7 +50,7 @@ public class RealNetBirdClient implements NetBirdClient {
         List<String> autoGroups = autoGroupsOf(existing);
         if (!autoGroups.contains(groupId)) {
             autoGroups.add(groupId);
-            updateAutoGroups((String) existing.get("id"), autoGroups);
+            updateAutoGroups(existing, autoGroups);
         }
     }
 
@@ -64,8 +66,45 @@ public class RealNetBirdClient implements NetBirdClient {
         }
         List<String> autoGroups = autoGroupsOf(existing);
         if (autoGroups.remove(department.netbirdGroupId())) {
-            updateAutoGroups((String) existing.get("id"), autoGroups);
+            updateAutoGroups(existing, autoGroups);
         }
+    }
+
+    @Override
+    public List<NetbirdConnectionStatus> pollConnectionStatuses() {
+        Map<String, String> emailByNetbirdUserId = new HashMap<>();
+        for (Map<String, Object> user : getList("/api/users")) {
+            emailByNetbirdUserId.put((String) user.get("id"), (String) user.get("email"));
+        }
+
+        Map<String, boolean[]> connectedByEmail = new HashMap<>();
+        Map<String, Instant> lastSeenByEmail = new HashMap<>();
+        for (Map<String, Object> peer : getList("/api/peers")) {
+            String email = emailByNetbirdUserId.get(peer.get("user_id"));
+            if (email == null) {
+                continue;
+            }
+            boolean connected = Boolean.TRUE.equals(peer.get("connected"));
+            connectedByEmail.computeIfAbsent(email, e -> new boolean[1])[0] |= connected;
+            Instant lastSeen = parseInstant(peer.get("last_seen"));
+            if (lastSeen != null) {
+                lastSeenByEmail.merge(email, lastSeen, (a, b) -> a.isAfter(b) ? a : b);
+            }
+        }
+
+        List<NetbirdConnectionStatus> statuses = new ArrayList<>();
+        for (String email : connectedByEmail.keySet()) {
+            statuses.add(new NetbirdConnectionStatus(
+                email, connectedByEmail.get(email)[0], lastSeenByEmail.get(email)));
+        }
+        return statuses;
+    }
+
+    private static Instant parseInstant(Object raw) {
+        if (!(raw instanceof String s) || s.isBlank()) {
+            return null;
+        }
+        return Instant.parse(s);
     }
 
     private String ensureGroup(UUID departmentId) {
@@ -90,13 +129,23 @@ public class RealNetBirdClient implements NetBirdClient {
             .orElse(null);
     }
 
+    /**
+     * NetBird's PUT /api/users/{id} requires role, auto_groups, and is_blocked together in every
+     * request -- omitting role (as an earlier version of this method did) gets rejected with
+     * "invalid user role" rather than leaving it unchanged, so the existing user's values are
+     * carried forward here instead of just sending the one field that's actually changing.
+     */
     @SuppressWarnings("unchecked")
-    private void updateAutoGroups(String userId, List<String> autoGroups) {
+    private void updateAutoGroups(Map<String, Object> existing, List<String> autoGroups) {
         restClient.put()
-            .uri(baseUrl + "/api/users/" + userId)
+            .uri(baseUrl + "/api/users/" + existing.get("id"))
             .header("Authorization", "Token " + apiToken)
             .contentType(MediaType.APPLICATION_JSON)
-            .body(Map.of("auto_groups", autoGroups))
+            .body(Map.of(
+                "role", existing.get("role"),
+                "auto_groups", autoGroups,
+                "is_blocked", Boolean.TRUE.equals(existing.get("is_blocked"))
+            ))
             .retrieve()
             .body(Map.class);
     }

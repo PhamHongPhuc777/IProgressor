@@ -43,14 +43,16 @@ public class RoleService {
     }
 
     @Transactional
-    public List<Permission> updateRolePermissions(UUID roleId, List<UUID> permissionIds) {
+    public List<Permission> updateRolePermissions(UUID roleId, List<UUID> grant, List<UUID> revoke) {
         Role role = requireRole(roleId);
         if ("Admin".equals(role.name())) {
             throw new ForbiddenException("The Admin row of the permission matrix is immutable");
         }
-        roleMapper.deletePermissionsForRole(roleId);
-        if (!permissionIds.isEmpty()) {
-            roleMapper.insertRolePermissions(roleId, permissionIds);
+        if (!grant.isEmpty()) {
+            roleMapper.grantPermissions(roleId, grant);
+        }
+        if (!revoke.isEmpty()) {
+            roleMapper.revokePermissions(roleId, revoke);
         }
         auditService.record("UPDATE_ROLE_PERMISSIONS", "ROLE", roleId);
         return roleMapper.findPermissionsForRole(roleId);

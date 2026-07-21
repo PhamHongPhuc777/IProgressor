@@ -139,4 +139,9 @@
         WHERE zitadel_user_id = #{zitadelUserId}
     </update>
 
+    <update id="updateNetbirdStatusByEmail">
+        UPDATE users SET netbird_connected = #{connected}, netbird_last_seen = #{lastSeen}
+        WHERE email = #{email}
+    </update>
+
 </mapper>
