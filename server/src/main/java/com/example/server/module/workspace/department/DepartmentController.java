@@ -4,6 +4,7 @@ import com.example.server.common.ApiResponse;
 import com.example.server.common.PageRequest;
 import com.example.server.common.PageResponse;
 import com.example.server.module.workspace.department.dto.DepartmentPerformance;
+import com.example.server.module.workspace.department.dto.DepartmentSummary;
 import com.example.server.module.workspace.department.dto.WorkloadEntry;
 import com.example.server.module.workspace.user.UserService;
 import com.example.server.module.workspace.user.dto.UserSummary;
@@ -30,6 +31,12 @@ public class DepartmentController {
     @PreAuthorize("hasAuthority('workspace.members.view')")
     public ApiResponse<List<Department>> list() {
         return ApiResponse.ok(departmentService.list());
+    }
+
+    /** Unauthenticated -- lets the public access-request form show a department picker. */
+    @GetMapping("/public")
+    public ApiResponse<List<DepartmentSummary>> listPublic() {
+        return ApiResponse.ok(departmentService.listPublic());
     }
 
     @GetMapping("/{id}/members")

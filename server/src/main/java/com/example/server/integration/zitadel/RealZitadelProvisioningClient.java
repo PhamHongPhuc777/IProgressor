@@ -8,8 +8,6 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
-import java.security.SecureRandom;
-import java.util.Base64;
 import java.util.Map;
 import java.util.UUID;
 
@@ -66,15 +64,21 @@ public class RealZitadelProvisioningClient implements ZitadelProvisioningClient 
         return (results == null || results.isEmpty()) ? null : (String) results.get(0).get("id");
     }
 
+    /**
+     * Both the password and email-verification fields are omitted entirely (not set to a
+     * placeholder/false value) -- Zitadel's SetHumanEmail.verification is a oneof, so explicitly
+     * setting isVerified=false still selects that oneof branch and suppresses the email; only
+     * leaving the whole field unset triggers Zitadel's native "Initialize User" email, which lets
+     * the applicant set their own password and verify their email in one link. Requires SMTP to
+     * be configured on this Zitadel instance (see markdown/SETUP.md's "Email (SMTP for Zitadel)"),
+     * otherwise the account exists but the invite never arrives.
+     */
     private String createHumanUser(String orgId, String email, String fullName) {
         String[] nameParts = splitName(fullName);
         Map<String, Object> response = post("/v2/users/human", Map.of(
             "organization", Map.of("orgId", orgId),
             "profile", Map.of("givenName", nameParts[0], "familyName", nameParts[1]),
-            "email", Map.of("email", email, "isVerified", false),
-            // Zitadel requires an initial password; the user resets it via Zitadel's own
-            // invite/forgot-password flow on first login rather than us handing one out.
-            "password", Map.of("password", generateInitialPassword())
+            "email", Map.of("email", email)
         ));
         return (String) response.get("userId");
     }
@@ -95,12 +99,5 @@ public class RealZitadelProvisioningClient implements ZitadelProvisioningClient 
         return spaceIndex < 0
             ? new String[]{fullName, fullName}
             : new String[]{fullName.substring(0, spaceIndex), fullName.substring(spaceIndex + 1)};
-    }
-
-    /** Satisfies Zitadel's default password policy (upper/lower/digit/symbol); never shown to the user. */
-    private static String generateInitialPassword() {
-        byte[] bytes = new byte[24];
-        new SecureRandom().nextBytes(bytes);
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes) + "!Aa1";
     }
 }

@@ -10,6 +10,9 @@ response, not just "looks right."
 ## Access Requests
 - [x] Submit access request (public)
 - [x] Approve access request (full Zitadel org/user + NetBird group/invite pipeline confirmed)
+- [ ] Re-test approve access request against the native-invite-email fix below (previously
+      confirmed run predates it and relied on manual curl force-verify/force-password, not the
+      real applicant-facing flow)
 - [x] List access requests
 - [x] Get access request by id
 - [x] Reject access request
@@ -21,6 +24,7 @@ response, not just "looks right."
 
 ## Departments
 - [x] List departments
+- [x] List departments (public) -- new, backs the public access-request form's department picker
 - [x] List department members
 - [x] Resource allocation
 - [x] Performance risk
@@ -89,6 +93,9 @@ response, not just "looks right."
 ## Roles
 - [x] List roles
 - [x] List permissions
+- [x] Get role permissions
+- [x] Update role permissions (now `PATCH` with `{grant, revoke}` deltas, not a full-array replace --
+      see below; confirmed against Leader, confirmed 403 "immutable" against Admin)
 
 ## Dashboard
 - [x] My dashboard
@@ -100,8 +107,8 @@ response, not just "looks right."
 - [x] Export audit logs (CSV)
 
 ## Webhooks
-- [ ] Zitadel user event (guarded by `X-Webhook-Secret`, not bearer auth)
-- [ ] NetBird connection event (guarded by `X-Webhook-Secret`, not bearer auth)
+- [x] Zitadel user event (guarded by `X-Webhook-Secret`, not bearer auth)
+- [x] NetBird connection event (guarded by `X-Webhook-Secret`, not bearer auth)
 - [x] NetBird connection status
 
 ## Known fixed issues along the way
@@ -137,3 +144,55 @@ response, not just "looks right."
   `{"grant": [...], "revoke": [...]}` delta semantics instead (`RoleMapper.grantPermissions`/
   `revokePermissions`, `ON CONFLICT DO NOTHING` on the grant side) so a caller can never
   accidentally clear permissions they didn't mean to touch.
+- The delta endpoint originally audited `UPDATE_ROLE_PERMISSIONS` unconditionally, even when a
+  grant/revoke was a no-op (e.g. re-granting an already-granted permission) -- `grantPermissions`/
+  `revokePermissions` now return actual affected-row counts, and `RoleService` only records an
+  audit entry when at least one row really changed. The same id appearing in both `grant` and
+  `revoke` in one request is now rejected with a 400 rather than silently resolved by execution
+  order (grant-then-revoke would otherwise make revoke win silently).
+- `POST /access-requests` requires a `departmentId`, but `GET /departments` needed
+  `workspace.members.view` -- an unauthenticated prospective employee had no way to even see
+  department names to pick from. Added `GET /departments/public` (`permitAll`, id+name only, no
+  `zitadelOrgId`/`netbirdGroupId`) to back the public registration form's department picker.
+  `V7__seed_default_departments.sql` seeds IT/Marketing/HR/Accounting as the default set (idempotent
+  `ON CONFLICT (name) DO NOTHING`, same pattern as V3's admin-bootstrap department).
+- The public department picker would otherwise have included the admin-bootstrap department
+  ("Administration") as a selectable option -- approval always assigns the `Staff` role regardless
+  of department so it's not a privilege-escalation path, but letting a public registrant target the
+  bootstrap-only department is still confusing/wrong. `findAllPublic` now excludes it by name
+  (`app.admin-bootstrap.department-name`), while the authenticated `GET /departments` still includes
+  it for internal use.
+- Neither this app nor self-hosted Zitadel had any SMTP configured -- Zitadel owns all
+  identity-related email (verification codes, password resets) and already has a built-in SMTP
+  provider setting, so the app itself doesn't need `spring-boot-starter-mail`. Ruled out EmailJS
+  (client-side-only REST API, no SMTP relay, would force a server-issued secret through the
+  browser) and Mailpit (self-hosted dev catcher, never actually delivers -- fine for local dev, a
+  dead end for the real employee beta). Initially picked Postmark, but its signup flow outright
+  blocks personal Gmail/Yahoo addresses (anti-abuse policy -- would've needed to buy a domain
+  first just to create an account); switched to **Brevo** instead, which accepts a personal
+  signup email and only requires verifying a single sender address, not a domain. Since this
+  Zitadel instance is already bootstrapped, `ZITADEL_FIRSTINSTANCE_SMTPCONFIGURATION_*` env vars
+  are a no-op (first-init only) -- wired in instead via the Admin API's `AddEmailProviderSMTP` +
+  `ActivateEmailProvider`, confirmed working end-to-end against the real local instance. Zitadel's
+  own rendered docs page for `AddEmailProviderSMTP` shows the wrong request shape (nests
+  `senderAddress`/`senderName`/`host`/`user` under `plain`/`none`/`xoauth2`) -- the real
+  `admin.proto` shows those are top-level fields on the request, and only `password` belongs
+  inside `plain`. Sending the docs page's shape silently drops `senderAddress` and fails with
+  `"value length must be between 1 and 200 runes"`. See `markdown/SETUP.md`'s "Email (SMTP for
+  Zitadel)" section for the corrected request body. Verified end-to-end via
+  `POST /v2/users/{userId}/password_reset` (v2, instance-wide) -- the deprecated org-scoped
+  `management/v1/users/{id}/password/_reset` 404s for a user provisioned into a non-default org
+  without an `x-zitadel-orgid` header. Real reset + password-changed emails both landed in the
+  primary inbox, correctly branded.
+- `RealZitadelProvisioningClient.createHumanUser` was silently suppressing Zitadel's own invite
+  email, undetected until SMTP existed to notice: it set `email.isVerified = false` and a random,
+  never-shared password. `SetHumanEmail.verification` is a `oneof` (`sendCode`/`returnCode`/
+  `isVerified`) -- explicitly setting `isVerified` to `false` still *selects that branch*, which
+  suppresses the send; only leaving the whole `email` verification field unset triggers Zitadel's
+  default "send an email with the default url" behavior (confirmed against the real
+  `user_service/v2/email.proto` on GitHub). The random password compounded this -- even if the
+  email had gone out, there was nothing for the applicant to actually log in with. Fixed by
+  omitting both the password field and the verification oneof entirely, so Zitadel sends its
+  native "Initialize User" email (set password + verify email in one link) instead. Requires SMTP
+  to be live on this Zitadel instance (see above) or the account is created but the invite never
+  arrives.

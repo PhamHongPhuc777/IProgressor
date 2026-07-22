@@ -25,6 +25,13 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class RealNetBirdClient implements NetBirdClient {
 
+    /**
+     * One-time-bootstrapped NetBird ACL policy (see Markdown/ENDPOINT.md) whose source groups are
+     * kept in sync here so a newly created department automatically gains network access to the
+     * app server without anyone having to remember to update the policy by hand.
+     */
+    private static final String APP_ACCESS_POLICY_NAME = "Employees to App Server";
+
     private final DepartmentService departmentService;
     private final RestClient restClient = RestClient.create();
 
@@ -119,7 +126,44 @@ public class RealNetBirdClient implements NetBirdClient {
             .findFirst()
             .orElseGet(() -> (String) post("/api/groups", Map.of("name", department.name())).get("id"));
         departmentService.updateNetbirdGroupId(departmentId, groupId);
+        ensureGroupAllowedInAppPolicy(groupId);
         return groupId;
+    }
+
+    /** No-op if the policy hasn't been bootstrapped yet (e.g. local dev, before the one-time NetBird ACL setup). */
+    @SuppressWarnings("unchecked")
+    private void ensureGroupAllowedInAppPolicy(String groupId) {
+        Map<String, Object> policy = getList("/api/policies").stream()
+            .filter(p -> APP_ACCESS_POLICY_NAME.equals(p.get("name")))
+            .findFirst()
+            .orElse(null);
+        if (policy == null) {
+            return;
+        }
+        List<Map<String, Object>> rules = (List<Map<String, Object>>) policy.get("rules");
+        Map<String, Object> rule = rules.get(0);
+        List<String> sourceIds = groupIdsOf(rule.get("sources"));
+        if (sourceIds.contains(groupId)) {
+            return;
+        }
+        sourceIds.add(groupId);
+
+        Map<String, Object> updatedRule = new HashMap<>(rule);
+        updatedRule.put("sources", sourceIds);
+        updatedRule.put("destinations", groupIdsOf(rule.get("destinations")));
+
+        Map<String, Object> updatedPolicy = new HashMap<>(policy);
+        updatedPolicy.put("rules", List.of(updatedRule));
+        put("/api/policies/" + policy.get("id"), updatedPolicy);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<String> groupIdsOf(Object rawGroups) {
+        List<String> ids = new ArrayList<>();
+        for (Map<String, Object> g : (List<Map<String, Object>>) rawGroups) {
+            ids.add((String) g.get("id"));
+        }
+        return ids;
     }
 
     private Map<String, Object> findUserByEmail(String email) {
@@ -135,19 +179,12 @@ public class RealNetBirdClient implements NetBirdClient {
      * "invalid user role" rather than leaving it unchanged, so the existing user's values are
      * carried forward here instead of just sending the one field that's actually changing.
      */
-    @SuppressWarnings("unchecked")
     private void updateAutoGroups(Map<String, Object> existing, List<String> autoGroups) {
-        restClient.put()
-            .uri(baseUrl + "/api/users/" + existing.get("id"))
-            .header("Authorization", "Token " + apiToken)
-            .contentType(MediaType.APPLICATION_JSON)
-            .body(Map.of(
-                "role", existing.get("role"),
-                "auto_groups", autoGroups,
-                "is_blocked", Boolean.TRUE.equals(existing.get("is_blocked"))
-            ))
-            .retrieve()
-            .body(Map.class);
+        put("/api/users/" + existing.get("id"), Map.of(
+            "role", existing.get("role"),
+            "auto_groups", autoGroups,
+            "is_blocked", Boolean.TRUE.equals(existing.get("is_blocked"))
+        ));
     }
 
     @SuppressWarnings("unchecked")
@@ -159,6 +196,17 @@ public class RealNetBirdClient implements NetBirdClient {
     @SuppressWarnings("unchecked")
     private Map<String, Object> post(String path, Map<String, Object> body) {
         return restClient.post()
+            .uri(baseUrl + path)
+            .header("Authorization", "Token " + apiToken)
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(body)
+            .retrieve()
+            .body(Map.class);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> put(String path, Map<String, Object> body) {
+        return restClient.put()
             .uri(baseUrl + path)
             .header("Authorization", "Token " + apiToken)
             .contentType(MediaType.APPLICATION_JSON)

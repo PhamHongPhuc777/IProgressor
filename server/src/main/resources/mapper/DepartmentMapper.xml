@@ -36,6 +36,17 @@
         SELECT department_id, name, zitadel_org_id, netbird_group_id FROM department ORDER BY name
     </select>
 
+    <resultMap id="departmentSummaryMap" type="com.example.server.module.workspace.department.dto.DepartmentSummary">
+        <constructor>
+            <idArg column="department_id" javaType="java.util.UUID" name="departmentId"/>
+            <arg column="name" javaType="string" name="name"/>
+        </constructor>
+    </resultMap>
+
+    <select id="findAllPublic" resultMap="departmentSummaryMap">
+        SELECT department_id, name FROM department WHERE name &lt;&gt; #{excludeName} ORDER BY name
+    </select>
+
     <select id="findById" resultMap="departmentMap">
         SELECT department_id, name, zitadel_org_id, netbird_group_id FROM department WHERE department_id = #{departmentId}
     </select>

@@ -47,6 +47,7 @@ erDiagram
         uuid department_id PK
         string name
         string zitadel_org_id
+        string netbird_group_id
     }
     ROLE {
         uuid role_id PK
@@ -180,6 +181,7 @@ erDiagram
 | department_id | uuid | PK |
 | name | string | |
 | zitadel_org_id | string | |
+| netbird_group_id | string | Có thể null. Cache id nhóm NetBird tương ứng, tạo lười (lazy) lần đầu có user thuộc phòng ban này cần cấp quyền mạng — cùng khuôn mẫu với `zitadel_org_id` |
 
 ### ROLE (Vai trò)
 

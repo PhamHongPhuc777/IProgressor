@@ -1,6 +1,7 @@
 package com.example.server.module.workspace.department;
 
 import com.example.server.module.workspace.department.dto.DepartmentPerformance;
+import com.example.server.module.workspace.department.dto.DepartmentSummary;
 import com.example.server.module.workspace.department.dto.WorkloadEntry;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -12,6 +13,8 @@ import java.util.UUID;
 public interface DepartmentMapper {
 
     List<Department> findAll();
+
+    List<DepartmentSummary> findAllPublic(@Param("excludeName") String excludeName);
 
     Department findById(@Param("departmentId") UUID departmentId);
 

@@ -122,6 +122,10 @@
       "item": [
         { "name": "List departments", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/departments" } },
         {
+          "name": "List departments (public)",
+          "request": { "auth": { "type": "noauth" }, "method": "GET", "url": "{{baseUrl}}/api/v1/departments/public" }
+        },
+        {
           "name": "List department members",
           "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/departments/{{departmentId}}/members?page=0&size=20" }
         },

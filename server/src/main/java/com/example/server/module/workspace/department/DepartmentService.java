@@ -5,8 +5,10 @@ import com.example.server.common.exception.NotFoundException;
 import com.example.server.security.AuthenticatedUser;
 import com.example.server.security.CurrentUser;
 import com.example.server.module.workspace.department.dto.DepartmentPerformance;
+import com.example.server.module.workspace.department.dto.DepartmentSummary;
 import com.example.server.module.workspace.department.dto.WorkloadEntry;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -17,6 +19,10 @@ import java.util.UUID;
 public class DepartmentService {
 
     private final DepartmentMapper departmentMapper;
+
+    /** The bootstrap-only department created by V3's admin seed -- not a real pickable department. */
+    @Value("${app.admin-bootstrap.department-name}")
+    private String adminDepartmentName;
 
     /** Staff/PM only ever see their own department; Leader/Admin see all (project.view.all_departments). */
     public List<Department> list() {
@@ -30,6 +36,15 @@ public class DepartmentService {
 
     public Department getById(UUID departmentId) {
         return requireDepartment(departmentId);
+    }
+
+    /**
+     * Unauthenticated -- backs the public access-request form's department picker, id+name only.
+     * Excludes the admin-bootstrap department: it's not a real department a new employee belongs
+     * to, and letting a public requester target it is confusing at best.
+     */
+    public List<DepartmentSummary> listPublic() {
+        return departmentMapper.findAllPublic(adminDepartmentName);
     }
 
     /** Called by ZitadelProvisioningClient after lazily creating the org for this department. */

@@ -39,6 +39,8 @@ public class SecurityConfig {
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.POST, "/api/v1/access-requests").permitAll()
+                // Backs the public access-request form's department picker (id+name only, no internal fields).
+                .requestMatchers(HttpMethod.GET, "/api/v1/departments/public").permitAll()
                 // Guarded by WebhookSharedSecretFilter instead of a bearer token (server-to-server calls).
                 .requestMatchers("/api/v1/webhooks/**").permitAll()
                 // Only reachable when the "dev" profile registers DevTokenController; inert (404) otherwise.

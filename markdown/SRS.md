@@ -4,7 +4,9 @@
 **Người soạn:**
 **Ngày soạn:** 09/07/2026
 
-> Converted from `Software Requirement Specification - Project Managment Web App.pdf` for repo review/reference. Content is unedited from the source PDF (only reformatted to Markdown), **except for the corrections noted below.**
+> Converted from `Software Requirement Specification - Project Managment Web App.pdf` for repo review/reference. Content is unedited from the source PDF (only reformatted to Markdown), **except for the corrections/additions noted below.**
+>
+> **Addition note (2026-07-22):** FR-5 gained two bullets not in the original PDF -- SMTP for Zitadel's own account-lifecycle emails, and Google (OAuth2) as an added external identity provider option -- reflecting real implementation decisions made after this document was first converted (see `markdown/SETUP.md`'s "Email (SMTP for Zitadel)" section). Marked as an addition, not a correction, since nothing in the original was wrong -- these simply didn't exist yet when the PDF was written.
 
 ## Table of Contents
 
@@ -93,6 +95,8 @@ Công cụ nội bộ (internal tool), không public ra ngoài internet công kh
 - Đăng nhập tập trung qua Zitadel self-host (OIDC/OAuth2); hỗ trợ identity brokering với Entra ID hoặc AD/LDAP on-prem nếu công ty có sẵn.
 - Phân quyền RBAC theo workspace, kiểm tra bắt buộc ở tầng API (Spring Boot), không chỉ ẩn/hiện trên giao diện.
 - NetBird (self-host, mạng riêng nội bộ) dùng chung Zitadel làm OIDC identity provider — thống nhất một hệ định danh cho cả truy cập ứng dụng lẫn truy cập mạng nội bộ (SSH, admin console, DB).
+- *(Bổ sung)* Google (OAuth2) được cấu hình như một nhà cung cấp danh tính bên ngoài bổ sung ngay trong Zitadel, cùng nhóm với Entra ID/AD-LDAP ở trên — không phải backend tự tích hợp Google trực tiếp.
+- *(Bổ sung)* Zitadel cần một dịch vụ SMTP để tự gửi email vòng đời tài khoản (mã xác minh, đặt lại mật khẩu, email mời khởi tạo tài khoản sau khi được duyệt truy cập) — backend không tự gửi các email này.
 
 ### FR-6: Nhật ký audit cho quản trị hệ thống
 

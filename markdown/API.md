@@ -26,7 +26,8 @@ Zitadel xử lý việc đăng nhập thực tế (luồng redirect OIDC) — đ
 
 | Method | Path | Mô tả | S | P | L | A |
 |---|---|---|---|---|---|---|
-| POST | `/access-requests` | Gửi yêu cầu (chưa cần đăng nhập) — `full_name`, `email`, `department_id` | — | — | — | — |
+| GET | `/departments/public` | Danh sách phòng ban (id + tên) cho form đăng ký công khai — không cần đăng nhập. Loại trừ phòng ban khởi tạo Admin (`Administration`), vì đây không phải phòng ban thật ai cũng chọn được | — | — | — | — |
+| POST | `/access-requests` | Gửi yêu cầu (chưa cần đăng nhập) — `full_name`, `email`, `department_id` (chọn từ danh sách trên) | — | — | — | — |
 | GET | `/access-requests?department_id=&status=` | Danh sách yêu cầu — Admin chỉ thấy phòng ban mình quản trị (theo ranh giới RBAC trong ERD) | 0 | 0 | 0 | 1 |
 | GET | `/access-requests/{id}` | Chi tiết yêu cầu | 0 | 0 | 0 | 1 |
 | POST | `/access-requests/{id}/approve` | Cấp định danh Zitadel + tạo dòng `USER` | 0 | 0 | 0 | 1 |
@@ -61,7 +62,7 @@ Hướng đã chốt: **Phương án B** (ma trận chỉnh sửa được bởi
 | GET | `/roles` | Danh sách 4 vai trò cố định | 0 | 0 | 0 | 1 |
 | GET | `/permissions` | Danh mục quyền (~25 dòng, khởi tạo từ bảng FR) | 0 | 0 | 0 | 1 |
 | GET | `/roles/{id}/permissions` | Xem dòng ma trận của một vai trò | 0 | 0 | 0 | 1 |
-| PUT | `/roles/{id}/permissions` | Chỉnh ma trận cho Leader/PM/Staff, ghi `AUDIT_LOG`. **Dòng Admin là bất biến** — trả về lỗi 403 nếu `role_id` là Admin, được khởi tạo với đầy đủ quyền ngay từ đầu. Đây là phần bảo vệ ở server, bổ sung cho việc khóa ở giao diện — vì chỉ disable ở client không ngăn được người gọi thẳng API | 0 | 0 | 0 | 1 |
+| PATCH | `/roles/{id}/permissions` | Body: `{grant: [permissionId...], revoke: [permissionId...]}` — chỉnh ma trận theo kiểu delta (không phải thay toàn bộ mảng), tránh vô tình xóa mất quyền không liên quan khi chỉ định cấp/thu hồi một quyền. Cùng một id xuất hiện ở cả `grant` lẫn `revoke` trong một request → lỗi 400. Chỉ ghi `AUDIT_LOG` khi có ít nhất một dòng thực sự thay đổi (bỏ qua no-op, ví dụ cấp lại quyền đã có sẵn). **Dòng Admin là bất biến** — trả về lỗi 403 nếu `role_id` là Admin, được khởi tạo với đầy đủ quyền ngay từ đầu. Đây là phần bảo vệ ở server, bổ sung cho việc khóa ở giao diện — vì chỉ disable ở client không ngăn được người gọi thẳng API | 0 | 0 | 0 | 1 |
 
 ---
 
