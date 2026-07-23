@@ -10,9 +10,14 @@ response, not just "looks right."
 ## Access Requests
 - [x] Submit access request (public)
 - [x] Approve access request (full Zitadel org/user + NetBird group/invite pipeline confirmed)
-- [ ] Re-test approve access request against the native-invite-email fix below (previously
-      confirmed run predates it and relied on manual curl force-verify/force-password, not the
-      real applicant-facing flow)
+- [x] Re-test approve access request against the native-invite-email fix (real applicant flow:
+      public submit -> approve -> Zitadel's native "Initialize User" email confirmed delivered via
+      Brevo to a real inbox, not a curl force-verify/force-password shortcut).
+- [x] Re-test approve access request against the `access_request.manage.all_departments` fix (V8) --
+      approved a fresh "IT"-department request with the Admin dev token (own department
+      "Administration"); confirmed cross-department, and confirmed the full chain (Zitadel user +
+      local `users` row + NetBird invite, `status: "invited"` on the real NetBird account) all
+      completed successfully in one call.
 - [x] List access requests
 - [x] Get access request by id
 - [x] Reject access request
@@ -67,6 +72,16 @@ response, not just "looks right."
 - [x] Stream notifications (SSE) -- correctly hangs open (long-lived connection, not request/response); confirms it connects without erroring
 - [x] Mark notification read
 - [x] Send broadcast (also confirmed `broadcast_message.send` now granted to Admin via V6 migration, not just Leader)
+- [ ] New access-request submission notifies approvers (added -- previously nothing notified anyone
+      when a request came in; an Admin/Leader would only find out by polling
+      `GET /access-requests?status=PENDING`). `AccessRequestService.submit()` now notifies every
+      user holding `access_request.manage.all_departments` (company-wide) plus every user holding
+      plain `access_request.manage` scoped to the request's own department -- mirrors the same
+      permission check `approve()`/`reject()` enforce, via two new `UserMapper` queries
+      (`findUserIdsByPermission`/`findUserIdsByPermissionAndDepartment`, `role_permission` JOIN
+      `permission`). Not yet manually verified against a real SSE-connected client -- needs a
+      restart + a real `POST /access-requests` while a Postman SSE stream is open on the Admin
+      token to confirm.
 
 ## Users
 - [x] Mint user token
@@ -196,3 +211,70 @@ response, not just "looks right."
   native "Initialize User" email (set password + verify email in one link) instead. Requires SMTP
   to be live on this Zitadel instance (see above) or the account is created but the invite never
   arrives.
+- Zitadel's hosted login page ships with self-registration (`allowRegister`) and external-IDP
+  signup (`allowExternalIdp`, e.g. "Sign in with Google") both enabled by default -- discovered by
+  actually authenticating with Google on the login page and getting a real Zitadel-issued JWT for
+  an identity that was never provisioned through `AccessRequestService.approve()`.
+  `LocalUserJwtAuthenticationConverter` correctly 401s it (`"No local account provisioned for this
+  identity"`, since it resolves every JWT against the local `users` table rather than trusting
+  claims), so nothing was actually broken -- but it leaves stray, permanently-unusable Zitadel
+  identities lying around, which could later collide with a genuine access-request approval for the
+  same email. Disabled both instance-wide via `PUT /admin/v1/policies/login` -- see `markdown/SETUP.md`
+  step 4 for the exact request body (the endpoint replaces the whole policy object, so every other
+  field has to be carried forward from a prior `GET`).
+- Wanted Google sign-in usable for *already-approved* employees (most use Gmail) without reopening
+  the self-registration hole just closed above. `allowExternalIdp` on the login policy isn't scoped
+  to registration only -- it gates external-IDP login entirely, so leaving it off would've blocked
+  Google sign-in outright. The real lever is per-IDP, not the login policy: Google's configured IDP
+  had `isCreationAllowed: true` (lets Google auth create a brand new account, exactly what caused
+  the original problem) and no `autoLinking`. Fixed via `PUT /admin/v1/idps/google/{id}` --
+  `isCreationAllowed: false` (blocks any new account via Google), `isLinkingAllowed: true` +
+  `autoLinking: AUTO_LINKING_OPTION_EMAIL` (prompts to link Google to an existing account when the
+  verified email matches), then re-enabled `allowExternalIdp` on the login policy. Confirmed a
+  random Google email with no matching account gets refused (`isCreationAllowed: false`), while a
+  known account requires its Zitadel email to actually be *verified* first for the auto-link email
+  match to trigger -- an unverified email silently falls through to the (now-blocked) creation path
+  instead of prompting to link.
+- Verification/invite emails silently vanished (no bounce, not in spam) despite Zitadel logging a
+  clean send and Brevo's own delivery log showing `Sent`. Root cause: `BREVO_SENDER_ADDRESS` was a
+  free-provider address (first the tester's own Gmail, tried Outlook.com next with the same
+  result), which fails SPF/DKIM alignment through Brevo's servers and gets caught by the
+  recipient's heuristic spam filtering regardless of the sender domain's own (lenient) DMARC policy.
+  Real fix was authenticating a real owned domain (`all-rounder.win`) with Brevo and switching to
+  `noreply@all-rounder.win` -- see `markdown/SETUP.md`'s "Email (SMTP for Zitadel)" section for the
+  full diagnostic trail, the Cloudflare "CNAME must be DNS-only not Proxied" gotcha, and the correct
+  (non-deprecated) `UpdateEmailProviderSMTP` endpoint to push the change live.
+- `access_request.manage` is Admin-only (V2), and `AccessRequestService` department-scoped it
+  exactly like a department Leader -- but Admin's own department ("Administration", a
+  dev/bootstrap-only department from V3, not public-facing) is never the target department of a
+  real access request. As seeded, **no access request for any real department could ever be
+  approved by anyone** -- not a design tradeoff, an actual dead end, caught by trying to approve an
+  "IT"-department request with the Admin dev token and getting a 403. Fixed by adding
+  `access_request.manage.all_departments` (V8, granted to Admin only, since the Admin permission
+  row is immutable via the runtime API per `RoleService.updateRolePermissions`) and checking it in
+  `AccessRequestService.list()`/`requireOwnDepartment()`, mirroring the existing
+  `project.view.all_departments` pattern in `ProjectService`/`DepartmentService`/`DashboardService`
+  rather than special-casing the Admin role name. Also had to fix `AccessRequestMapper.xml`'s
+  `findByDepartment`/`countByDepartment`, which did an unconditional `department_id = #{departmentId}`
+  -- passing `null` for "all departments" would've silently matched zero rows instead of removing
+  the filter, unlike `ProjectMapper`'s equivalent queries which already wrapped it in
+  `<if test="departmentId != null">`.
+- The V8 fix above surfaced a real transactional-boundary bug while retesting: approving an access
+  request whose email NetBird rejected with `409` ("can't invite a user with an existing netbird
+  account" -- that email had some unrelated pre-existing NetBird identity, confirmed absent from
+  our own team's `/api/users`) threw an unhandled `HttpClientErrorException`, producing a generic
+  500. `@Transactional` rolled back the local `users` row and the access-request status, but
+  **can't** undo the Zitadel account that `RealZitadelProvisioningClient.createHumanUser` had
+  already created moments earlier -- a real external side effect, same class of problem `ensureOrg`
+  already had a fix for (name-based lookup before creating), just not applied to human users yet.
+  Confirmed via `POST /v2/users` (email-filtered `ListUsers`) that a live, orphaned Zitadel account
+  existed with no matching local row. Fixed two things: (1) `provisionUser` now looks up an
+  existing Zitadel user by email first and reuses it instead of blindly creating, so a retry
+  self-heals instead of colliding on Zitadel's unique-email constraint; (2) `RealNetBirdClient`
+  catches NetBird's `409` specifically and throws a `ConflictException` with an actionable message
+  instead of leaking the raw exception as a 500. The underlying NetBird conflict itself isn't
+  fixable from this app's side (it's a real pre-existing identity on NetBird's platform) --
+  confirmed the whole fixed chain (Zitadel reuse + clear 409) by retrying the same request and
+  getting the clean actionable error, then confirmed the full happy path separately with a NetBird-
+  clean email (Zitadel user + local row + NetBird invite, `status: "invited"`, all succeeded in one
+  call, cross-department via the V8 permission).

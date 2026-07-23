@@ -32,7 +32,22 @@ public class RealZitadelProvisioningClient implements ZitadelProvisioningClient 
     @Override
     public String provisionUser(String email, String fullName, UUID departmentId) {
         String orgId = ensureOrg(departmentId);
-        return createHumanUser(orgId, email, fullName);
+        // Same "external side effect a later @Transactional failure can't undo" problem as
+        // ensureOrg below: if a previous approve() created this Zitadel user but then failed on a
+        // later step (e.g. NetBird), retrying would otherwise collide on Zitadel's unique
+        // email/username constraint instead of reusing the identity that already exists.
+        String existingUserId = findUserIdByEmail(email);
+        return existingUserId != null ? existingUserId : createHumanUser(orgId, email, fullName);
+    }
+
+    @SuppressWarnings("unchecked")
+    private String findUserIdByEmail(String email) {
+        Map<String, Object> body = Map.of("queries", java.util.List.of(
+            Map.of("emailQuery", Map.of("emailAddress", email))
+        ));
+        Map<String, Object> response = post("/v2/users", body);
+        var results = (java.util.List<Map<String, Object>>) response.get("result");
+        return (results == null || results.isEmpty()) ? null : (String) results.get(0).get("userId");
     }
 
     private String ensureOrg(UUID departmentId) {

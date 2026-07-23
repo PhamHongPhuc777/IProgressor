@@ -1,4 +1,4 @@
-package com.example.server.audit;
+package com.example.server.module.audit;
 
 import com.example.server.common.PageRequest;
 import com.example.server.common.PageResponse;

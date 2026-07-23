@@ -41,20 +41,27 @@ is blocked.
 
 **Spring Modulith adds a second, broader check on top of this.** `ApplicationModuleArrangementTest`
 (`ApplicationModules.of(ServerApplication.class).verify()`) treats every domain folder under
-`module/workspace/*` and `module/project/**` as its own `@ApplicationModule` (declared in each
-folder's `package-info.java`, using `spring.modulith.detection-strategy: explicitly-annotated`
-since these folders sit deeper than Modulith's default "direct child of the app package"
-detection) and checks two things `ModularityTest` never did:
+`module/workspace/*`, `module/project/**`, and `module/message/**` as its own `@ApplicationModule`
+(declared in each folder's `package-info.java`, using `spring.modulith.detection-strategy:
+explicitly-annotated` since these folders sit deeper than Modulith's default "direct child of the
+app package" detection) and checks two things `ModularityTest` never did:
 
-- **No cycles between modules.** This caught a real one: `notification/notification` and
-  `notification/broadcast` call into each other (see request trace #2 below), so they're declared
+- **No cycles between modules.** This caught a real one: `message/notification` and
+  `message/broadcast` call into each other (see request trace #2 below), so they're declared
   as *one* Modulith module, not two -- splitting them would be a genuine cycle, not a false
   positive.
 - **No module reaches into another module's internal sub-packages** -- by default only a module's
   *root* package is its public API; `dto/` and any other sub-package are internal unless exposed
   via `@NamedInterface`. Five `dto/` packages are genuinely used cross-module today (`workspace/
   user/dto`, `workspace/department/dto`, `project/me/dto`, `project/task/task/dto`,
-  `project/task/tag/dto`) and are marked `@NamedInterface("dto")` accordingly.
+  `project/task/tag/dto`) and are marked `@NamedInterface("dto")` accordingly. `message/notification`
+  is the one non-`dto/` case: `workspace/accessrequest/AccessRequestService` calls
+  `NotificationService.notifyUser` directly to alert approvers, so that sub-package is marked
+  `@NamedInterface("notification")` too. This is also why `message` had to move out from under
+  `module/project/` to be its own top-level module (`module/message/`) -- Modulith additionally
+  requires that a module reaching into another module's named interface be that module's parent or
+  a sibling nested *within* the same parent, and `workspace/accessrequest` is neither of those
+  relative to `project`.
 
 Two honest gaps, left as-is rather than papered over: (1) Controller/Service/Model/**Mapper** are
 flat siblings in each domain's root package by this codebase's convention, so Modulith's own
@@ -112,15 +119,19 @@ webhook/                     Inbound: Zitadel/NetBird push user-lock and connect
 audit/                       Append-only AUDIT_LOG -- write side used by every mutating service,
                               read side is its own Admin-only endpoint
 
-module/                       Groups the domain packages below into two clusters -- IAM-ish
-                              (workspace) vs. project-execution (project) -- everything under
-                              "The five folders that don't follow the pattern" above stays outside
-                              it, since those are cross-cutting infra, not domain modules.
+module/                       Groups the domain packages below into three clusters -- IAM-ish
+                              (workspace), project-execution (project), and cross-cutting delivery
+                              (message, top-level rather than nested under project since it's
+                              called from workspace/accessrequest too, not project-only) --
+                              everything under "The five folders that don't follow the pattern"
+                              above stays outside it, since those are cross-cutting infra, not
+                              domain modules.
 
 module/workspace/department/  Department entity + workload/performance-risk aggregation queries
 module/workspace/role/        Role + Permission + the editable ROLE_PERMISSION matrix
 module/workspace/user/        User entity, admin user management (role change, lock/unlock)
-module/workspace/accessrequest/  Anonymous signup request -> Admin approve/reject -> provisions a User
+module/workspace/accessrequest/  Anonymous signup request -> Admin approve/reject -> provisions a User,
+                              notifying approvers via module/message/notification
 
 module/project/               Project entity, department-scoped CRUD (module root doubles as this
                               entity's own folder -- no `module/project/project/` stutter)
@@ -131,9 +142,11 @@ module/project/task/comment/  Comment entity, nested under a task
 module/project/task/attachment/  Attachment entity, nested under a task (no dto/, see above)
 module/project/task/tag/      Tag entity -- just the catalog; attach/detach logic lives in task/task/
 
-module/project/notification/notification/  Notification entity, list/stream(SSE)/markRead
-module/project/notification/broadcast/     BroadcastMessage entity -- creates a broadcast, fans out via
-                              notification.notification.NotificationService
+module/message/notification/  Notification entity, list/stream(SSE)/markRead -- notification/ is a
+                              @NamedInterface, since module/workspace/accessrequest calls
+                              NotificationService directly
+module/message/broadcast/     BroadcastMessage entity -- creates a broadcast, fans out via
+                              notification.NotificationService
 
 module/project/me/            Composition layer: "my own profile" (User + role/department names +
                               permissions) and "my own task stats" -- pulls from 3+ other packages
@@ -159,10 +172,10 @@ that's the point of the domain-first split: one feature, one place to look.
 `POST /api/v1/notifications/broadcast` — a Leader sends a workspace-wide announcement.
 
 1. Security prelude same as above; `@PreAuthorize("hasAuthority('broadcast_message.send')")`
-2. **`module/project/notification/notification/NotificationController.broadcast()`** — note the controller for the
+2. **`module/message/notification/NotificationController.broadcast()`** — note the controller for the
    `/notifications/*` URL prefix lives in the `notification` sub-package, but delegates to...
-3. **`module/project/notification/broadcast/BroadcastService.broadcast()`** — inserts the `BroadcastMessage` row via
-   `BroadcastMapper`, then calls **`module/project/notification/notification/NotificationService.notifyDepartment()`**
+3. **`module/message/broadcast/BroadcastService.broadcast()`** — inserts the `BroadcastMessage` row via
+   `BroadcastMapper`, then calls **`module/message/notification/NotificationService.notifyDepartment()`**
    (a public method on the *other* sub-package's service — this is the one legitimate cross-package
    coupling in this feature, because "deliver a notification" is genuinely one concern shared by
    both entities)

@@ -87,6 +87,22 @@
         SELECT user_id FROM users WHERE department_id = #{departmentId}
     </select>
 
+    <select id="findUserIdsByPermission" resultType="java.util.UUID">
+        SELECT u.user_id
+        FROM users u
+        JOIN role_permission rp ON rp.role_id = u.role_id
+        JOIN permission p ON p.permission_id = rp.permission_id
+        WHERE p.key = #{permissionKey} AND u.status = 'ACTIVE'
+    </select>
+
+    <select id="findUserIdsByPermissionAndDepartment" resultType="java.util.UUID">
+        SELECT u.user_id
+        FROM users u
+        JOIN role_permission rp ON rp.role_id = u.role_id
+        JOIN permission p ON p.permission_id = rp.permission_id
+        WHERE p.key = #{permissionKey} AND u.department_id = #{departmentId} AND u.status = 'ACTIVE'
+    </select>
+
     <select id="findNetbirdStatus" resultType="com.example.server.module.workspace.user.dto.NetbirdStatus">
         SELECT netbird_connected AS connected, netbird_last_seen AS lastSeen
         FROM users WHERE user_id = #{userId}
@@ -129,6 +145,10 @@
     <update id="updateAvatar">
         UPDATE users SET avatar_url = #{avatarUrl} WHERE user_id = #{userId}
     </update>
+
+    <select id="findUserIdByZitadelUserId" resultType="java.util.UUID">
+        SELECT user_id FROM users WHERE zitadel_user_id = #{zitadelUserId}
+    </select>
 
     <update id="updateStatusByZitadelUserId">
         UPDATE users SET status = #{status} WHERE zitadel_user_id = #{zitadelUserId}

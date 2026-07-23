@@ -1,6 +1,6 @@
 package com.example.server.module.workspace.accessrequest;
 
-import com.example.server.audit.AuditService;
+import com.example.server.module.audit.AuditService;
 import com.example.server.common.PageRequest;
 import com.example.server.common.PageResponse;
 import com.example.server.common.exception.ConflictException;
@@ -8,6 +8,8 @@ import com.example.server.common.exception.ForbiddenException;
 import com.example.server.common.exception.NotFoundException;
 import com.example.server.integration.netbird.NetBirdClient;
 import com.example.server.integration.zitadel.ZitadelProvisioningClient;
+import com.example.server.module.message.notification.NotificationService;
+import com.example.server.security.AuthenticatedUser;
 import com.example.server.security.CurrentUser;
 import com.example.server.module.workspace.accessrequest.dto.CreateAccessRequestRequest;
 import com.example.server.module.workspace.role.Role;
@@ -19,7 +21,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -32,6 +36,7 @@ public class AccessRequestService {
     private final AuditService auditService;
     private final ZitadelProvisioningClient zitadelProvisioningClient;
     private final NetBirdClient netBirdClient;
+    private final NotificationService notificationService;
 
     /**
      * Anonymous submission. If an account already exists for this email it's inferred to be an
@@ -52,17 +57,36 @@ public class AccessRequestService {
         UUID requestId = UUID.randomUUID();
         accessRequestMapper.insert(requestId, requestType, request.fullName(), request.email(),
             request.departmentId(), existingUserId);
+        notifyApprovers(requestId, request.departmentId());
         return accessRequestMapper.findById(requestId);
     }
 
+    /**
+     * Notifies whoever can actually approve this request: anyone with
+     * access_request.manage.all_departments (company-wide, e.g. Admin), plus anyone with plain
+     * access_request.manage scoped to this request's own department (e.g. a future department-
+     * scoped Leader grant) -- mirrors the same permission check approve()/reject() enforce, so the
+     * notified audience always matches who is actually allowed to act.
+     */
+    private void notifyApprovers(UUID requestId, UUID departmentId) {
+        Set<UUID> recipientIds = new HashSet<>(userService.getUserIdsByPermission("access_request.manage.all_departments"));
+        recipientIds.addAll(userService.getUserIdsByPermissionAndDepartment("access_request.manage", departmentId));
+        for (UUID recipientId : recipientIds) {
+            notificationService.notifyUser(recipientId, "ACCESS_REQUEST", requestId);
+        }
+    }
+
     public PageResponse<AccessRequest> list(UUID departmentId, String status, PageRequest pageRequest) {
-        UUID ownDepartmentId = CurrentUser.get().departmentId();
-        if (departmentId != null && !departmentId.equals(ownDepartmentId)) {
+        AuthenticatedUser actor = CurrentUser.get();
+        if (!actor.hasPermission("access_request.manage.all_departments")
+            && departmentId != null && !departmentId.equals(actor.departmentId())) {
             throw new ForbiddenException("Cannot view access requests for another department");
         }
-        List<AccessRequest> content = accessRequestMapper.findByDepartment(ownDepartmentId, status,
+        UUID effectiveDepartmentId = actor.hasPermission("access_request.manage.all_departments")
+            ? departmentId : actor.departmentId();
+        List<AccessRequest> content = accessRequestMapper.findByDepartment(effectiveDepartmentId, status,
             pageRequest.size(), pageRequest.offset());
-        long total = accessRequestMapper.countByDepartment(ownDepartmentId, status);
+        long total = accessRequestMapper.countByDepartment(effectiveDepartmentId, status);
         return PageResponse.of(content, pageRequest, total);
     }
 
@@ -106,7 +130,9 @@ public class AccessRequestService {
     }
 
     private void requireOwnDepartment(AccessRequest request) {
-        if (!request.departmentId().equals(CurrentUser.get().departmentId())) {
+        AuthenticatedUser actor = CurrentUser.get();
+        if (!actor.hasPermission("access_request.manage.all_departments")
+            && !request.departmentId().equals(actor.departmentId())) {
             throw new ForbiddenException("Cannot manage access requests for another department");
         }
     }

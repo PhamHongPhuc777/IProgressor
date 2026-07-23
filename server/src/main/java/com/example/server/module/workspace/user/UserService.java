@@ -1,6 +1,6 @@
 package com.example.server.module.workspace.user;
 
-import com.example.server.audit.AuditService;
+import com.example.server.module.audit.AuditService;
 import com.example.server.common.PageRequest;
 import com.example.server.common.PageResponse;
 import com.example.server.common.exception.BadRequestException;
@@ -128,11 +128,26 @@ public class UserService {
         return userMapper.findUserIdsByDepartment(departmentId);
     }
 
+    /** Everyone holding this permission regardless of department -- e.g. Admin's company-wide grants. */
+    public List<UUID> getUserIdsByPermission(String permissionKey) {
+        return userMapper.findUserIdsByPermission(permissionKey);
+    }
+
+    /** Everyone holding this permission, scoped to one department -- e.g. a department-scoped Leader grant. */
+    public List<UUID> getUserIdsByPermissionAndDepartment(String permissionKey, UUID departmentId) {
+        return userMapper.findUserIdsByPermissionAndDepartment(permissionKey, departmentId);
+    }
+
     /** Creates a new ACTIVE user for an already-provisioned Zitadel identity (access-request approval). */
     public User provision(String fullName, String email, UUID departmentId, UUID roleId, String zitadelUserId) {
         UUID userId = UUID.randomUUID();
         userMapper.insertProvisioned(userId, fullName, email, departmentId, roleId, zitadelUserId);
         return getUser(userId);
+    }
+
+    /** Resolves a Zitadel event's editor.userId back to a local actor for ZitadelEventSyncJob -- null if unresolvable (service accounts, SYSTEM/NOTIFICATION editors, users outside this app's org). */
+    public UUID findUserIdByZitadelUserId(String zitadelUserId) {
+        return userMapper.findUserIdByZitadelUserId(zitadelUserId);
     }
 
     public void updateStatusByZitadelUserId(String zitadelUserId, String status) {

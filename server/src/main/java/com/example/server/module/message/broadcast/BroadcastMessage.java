@@ -1,4 +1,4 @@
-package com.example.server.module.project.message.broadcast;
+package com.example.server.module.message.broadcast;
 
 import java.time.Instant;
 import java.util.UUID;

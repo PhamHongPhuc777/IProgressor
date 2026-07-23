@@ -1,4 +1,4 @@
-package com.example.server.module.project.message.broadcast.dto;
+package com.example.server.module.message.broadcast.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

@@ -48,6 +48,84 @@ already running on this machine (see `DB_URL`/`DB_USERNAME`/`DB_PASSWORD` below)
    to a real identity. **Without this, the seeded admin cannot log in at all.** (Console labels
    shift between Zitadel versions -- if this doesn't match what you see, send a screenshot.)
 
+   Note the seeded admin's own department is "Administration" (`V3`'s bootstrap department, not
+   public-facing -- see `markdown/ENDPOINT.md`'s known-issues list for `V8`, which grants
+   `access_request.manage.all_departments` so this Admin can actually approve access requests for
+   real departments like IT/Marketing, not just its own).
+4. Disable self-registration on the login page. This app's only sanctioned account-creation path is
+   access-request approval (`RealZitadelProvisioningClient.createHumanUser`) -- but Zitadel's hosted
+   login page ships with self-registration (including "Sign in with Google" creating a brand new
+   account, not just linking an existing one) turned on by default. Left on, anyone can authenticate
+   as a real Zitadel identity that the app will always 401 on (`LocalUserJwtAuthenticationConverter`
+   finds no matching `users` row), and worse, that stray email could later collide with a genuine
+   access-request approval for the same address. Turn it off instance-wide:
+
+   ```
+   curl -X PUT http://localhost:8081/admin/v1/policies/login \
+     -H "Authorization: Bearer $ZITADEL_SERVICE_ACCOUNT_TOKEN" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "allowUsernamePassword": true,
+       "allowRegister": false,
+       "allowExternalIdp": false,
+       "forceMfa": false,
+       "passwordlessType": "PASSWORDLESS_TYPE_ALLOWED",
+       "hidePasswordReset": false,
+       "ignoreUnknownUsernames": false,
+       "defaultRedirectUri": "",
+       "passwordCheckLifetime": "864000s",
+       "externalLoginCheckLifetime": "864000s",
+       "mfaInitSkipLifetime": "2592000s",
+       "secondFactorCheckLifetime": "64800s",
+       "multiFactorCheckLifetime": "43200s",
+       "allowDomainDiscovery": true,
+       "disableLoginWithEmail": false,
+       "disableLoginWithPhone": false,
+       "forceMfaLocalOnly": false
+     }'
+   ```
+
+   `PUT /admin/v1/policies/login` replaces the entire policy object (same full-body gotcha as
+   NetBird's user `PUT`), so this carries forward the instance's existing values (checked via
+   `GET /admin/v1/policies/login` first) and only flips `allowRegister`/`allowExternalIdp` to
+   `false`. Confirmed via a real Google sign-in attempt on the login page before and after: the
+   external-IDP button no longer creates a new account.
+5. Re-enable Google sign-in, but safely -- most employees use Gmail, and `allowExternalIdp` above
+   blocks Google login entirely, not just self-registration. The actual account-creation gate lives
+   per-IDP, not on the login policy: find the Google IDP's `id` from the login policy response's
+   `idps` array (or `GET /admin/v1/idps/google/{id}` isn't valid -- use
+   `GET /v2/idps/{id}` instead, the legacy `/admin/v1/idps/{id}` route 404s for Google-typed IDPs),
+   then:
+
+   ```
+   curl -X PUT http://localhost:8081/admin/v1/idps/google/<idp-id> \
+     -H "Authorization: Bearer $ZITADEL_SERVICE_ACCOUNT_TOKEN" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "name": "Google",
+       "clientId": "<existing client id, from a prior GET>",
+       "clientSecret": "",
+       "scopes": ["openid", "profile", "email"],
+       "providerOptions": {
+         "isLinkingAllowed": true,
+         "isCreationAllowed": false,
+         "isAutoCreation": false,
+         "isAutoUpdate": false,
+         "autoLinking": "AUTO_LINKING_OPTION_EMAIL"
+       }
+     }'
+   ```
+
+   `isCreationAllowed: false` blocks Google from ever creating a new account (closing the same hole
+   step 4 closed); `isLinkingAllowed: true` + `autoLinking: AUTO_LINKING_OPTION_EMAIL` lets Google
+   sign-in match and prompt-to-link an *existing* account by verified email instead. Leaving
+   `clientSecret` empty preserves the existing secret (only overwritten if provided, per
+   `UpdateGoogleProviderRequest`'s own field description). Then flip `allowExternalIdp` back to
+   `true` in the same login-policy body from step 4 (everything else unchanged) -- safe now that
+   creation is blocked at the IDP level regardless of the login policy. Note: the target account's
+   Zitadel email must already be *verified* for the auto-link match to trigger, or Google sign-in
+   silently falls through to the (blocked) creation path instead of prompting to link.
+
 ## 3. Environment variables
 
 | Variable | Value |
@@ -97,14 +175,50 @@ still deferred -- NetBird's own docs were unclear on whether the self-hosted OSS
 streaming feature applies to Cloud the same way, so `webhook/dto/NetbirdConnectionEventPayload`'s
 shape is still provisional. Revisit once that's confirmed against a real webhook payload.
 
+## SharePoint / Microsoft Graph
+
+`RealSharePointStorageClient` uploads task attachments to a single shared SharePoint document
+library via Microsoft Graph, using an **app-only** (client-credentials) grant -- there's no
+signed-in user in this flow, so this is a background-service/daemon app registration in Entra ID,
+not a delegated one.
+
+1. In the [Microsoft Entra admin center](https://entra.microsoft.com), go to **App registrations ->
+   New registration**. No redirect URI is needed (app-only, no interactive sign-in).
+2. Note the **Application (client) ID** and **Directory (tenant) ID** from the app's Overview page
+   -- these are `GRAPH_CLIENT_ID` and `GRAPH_TENANT_ID` below.
+3. Go to **Certificates & secrets -> New client secret**, then copy the secret **value** (not the
+   secret ID) immediately -- like NetBird's PAT, it's only shown once. This is `GRAPH_CLIENT_SECRET`.
+4. Go to **API permissions -> Add a permission -> Microsoft Graph -> Application permissions**, add
+   `Sites.ReadWrite.All`, then click **Grant admin consent** (application permissions always need
+   this, and there's no interactive consent prompt to fall back on since there's no signed-in user).
+5. Find the target SharePoint site's hostname and server-relative path from its URL, e.g.
+   `https://contoso.sharepoint.com/sites/IProgressor` splits into:
+   - `GRAPH_SITE_HOSTNAME` = `contoso.sharepoint.com`
+   - `GRAPH_SITE_PATH` = `sites/IProgressor` (no leading slash)
+
+| Variable | Value |
+|---|---|
+| `GRAPH_TENANT_ID` | Directory (tenant) ID from step 2 |
+| `GRAPH_CLIENT_ID` | Application (client) ID from step 2 |
+| `GRAPH_CLIENT_SECRET` | the client secret value from step 3 |
+| `GRAPH_SITE_HOSTNAME` | the site's hostname from step 5 |
+| `GRAPH_SITE_PATH` | the site's server-relative path from step 5 |
+
+`RealSharePointStorageClient` is only active on the `prod` profile -- local dev keeps using
+`LocalDocumentStorageClient` (writes to `./uploads`), since this app-only grant isn't worth setting
+up just to run locally. It creates any missing folders under the site's document library on its
+own (one per task, e.g. `task/{taskId}/`), same as `RealNetBirdClient` creates NetBird groups
+on demand -- no folder needs to be created manually.
+
 ## Email (SMTP for Zitadel)
 
-Zitadel sends its own verification-code and password-reset emails -- this app never needs its own
-mail sender (no `spring-boot-starter-mail`, no SMTP block in `application.yml`), since
-`RealZitadelProvisioningClient` already bypasses Zitadel's email-based verification during
-access-request approval by force-setting the password and force-verifying the email via the
-Management API. SMTP still matters for any of Zitadel's own self-service flows (e.g. a real
-"forgot password" link), and for a future real employee beta this needs to actually deliver.
+Zitadel sends its own verification-code, invite, and password-reset emails -- this app never needs
+its own mail sender (no `spring-boot-starter-mail`, no SMTP block in `application.yml`).
+`RealZitadelProvisioningClient.createHumanUser` deliberately leaves the new user's password and
+email-verification fields unset so Zitadel sends its native "Initialize User" invite (see
+`markdown/ENDPOINT.md`'s known-issues list for why an earlier version force-set both instead,
+silently suppressing the email). SMTP has to actually work for this, not just for self-service
+flows like "forgot password".
 
 **Why Brevo**, over three alternatives considered:
 - **Postmark** -- ruled out. Blocks account signup with a personal Gmail/Yahoo address outright
@@ -178,3 +292,54 @@ org-header issue unlike the deprecated org-scoped `management/v1/users/{id}/pass
 which 404s a user provisioned into a non-default org without an `x-zitadel-orgid` header). Both
 the "Reset password" email and the automatic "Password of user has changed" follow-up notification
 landed in the primary inbox (not spam), correctly branded with the `senderName` set above.
+
+**Don't set `BREVO_SENDER_ADDRESS` to the same address you're testing delivery to** (discovered the
+hard way): the very first password-reset test above worked because `BREVO_SENDER_ADDRESS` happened
+to be the tester's own personal Gmail address, but a later `POST /v2/users/{userId}/email/send`
+verification-code test to that *same* address silently vanished (no bounce, not in spam) despite
+Zitadel logging a clean send and Brevo's own delivery log showing `Sent`/`First opening`. Root
+cause: sending "From: yourname@gmail.com" via Brevo's servers (not Google's) fails SPF/DKIM
+alignment for `gmail.com` -- `gmail.com`'s own DMARC record is lenient (`p=none`, checked via
+`dig TXT _dmarc.gmail.com`), so it isn't hard-rejected, but Gmail's *heuristic* spam classifier
+treats "claims to be a gmail.com address, arrives via non-Google infra" as a classic
+self-impersonation/phishing signal and got more aggressive about silently dropping it the more of
+that exact pattern it saw in one day. Any other free-provider sender (Outlook, etc.) has the same
+underlying SPF/DKIM misalignment, just without the specific "impersonating the recipient's own
+provider" pattern -- still not reliable, since free-provider senders can also get flagged by
+Brevo/the recipient independently (e.g. a brand-new Outlook.com mailbox not receiving Brevo's own
+sender-verification code, even in Junk).
+
+**Real fix: authenticate your own domain in Brevo**, not a free-provider address at all. Buy a
+cheap domain (e.g. Cloudflare Registrar, ~$1-12/yr) -- this project uses `all-rounder.win` -- then
+in Brevo: **Senders, Domains & Dedicated IPs -> Domains -> Add a domain -> Manual** setup (not
+"Automatic", which would require granting Brevo direct API/OAuth write access to your DNS zone).
+Brevo gives you 7 DNS records to add (1 domain-ownership TXT, 2 DKIM CNAMEs, 1 DMARC TXT, and 3
+CNAMEs for branded links/images). **If your DNS host is Cloudflare, every CNAME must be set to
+"DNS only" (grey cloud), not "Proxied" (orange cloud)** -- Cloudflare defaults new CNAMEs to
+Proxied, which routes through Cloudflare's edge IPs instead of Brevo's actual mail infrastructure
+and silently breaks DKIM/domain verification even though the record technically "exists". Once
+Brevo shows the domain as `Authenticated` (a separate `Branding status` of "Not branded" is fine to
+ignore -- that only affects click/open-tracking link cosmetics, which this SMTP-relay setup doesn't
+use), any address `@yourdomain` can be used as `BREVO_SENDER_ADDRESS` without per-address
+click-to-verify. Apply the change to the already-running Zitadel instance via
+`UpdateEmailProviderSMTP`, **not** `UpdateSMTPConfig`/`/admin/v1/email/{id}` (that's a different,
+deprecated API group under the same Admin API and returns `405 Method Not Allowed`):
+
+```
+curl -X PUT http://localhost:8081/admin/v1/email/smtp/<id-from-GET-/admin/v1/email> \
+  -H "Authorization: Bearer $ZITADEL_SERVICE_ACCOUNT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "senderAddress": "'"$BREVO_SENDER_ADDRESS"'",
+    "senderName": "'"$BREVO_SENDER_NAME"'",
+    "tls": true,
+    "host": "smtp-relay.brevo.com:587",
+    "user": "'"$BREVO_SMTP_LOGIN"'"
+  }'
+```
+
+This updates and re-activates the existing config in one call (per the RPC's own description: "be
+aware that this will be activated as soon as it is saved"), unlike the initial `AddEmailProviderSMTP`
++ `_activate` two-step above. Confirmed working end-to-end after switching to
+`noreply@all-rounder.win`: a fresh verification-code email landed in the same Gmail inbox that had
+just silently dropped the self-sent-from-gmail.com version minutes earlier.

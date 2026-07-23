@@ -1,4 +1,4 @@
-package com.example.server.audit;
+package com.example.server.module.audit;
 
 import java.time.Instant;
 import java.util.UUID;

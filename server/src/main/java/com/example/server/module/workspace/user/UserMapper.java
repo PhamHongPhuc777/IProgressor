@@ -30,6 +30,11 @@ public interface UserMapper {
 
     List<UUID> findUserIdsByDepartment(@Param("departmentId") UUID departmentId);
 
+    List<UUID> findUserIdsByPermission(@Param("permissionKey") String permissionKey);
+
+    List<UUID> findUserIdsByPermissionAndDepartment(@Param("permissionKey") String permissionKey,
+                                                      @Param("departmentId") UUID departmentId);
+
     NetbirdStatus findNetbirdStatus(@Param("userId") UUID userId);
 
     UserRoleInfo findRoleInfo(@Param("userId") UUID userId);
@@ -43,6 +48,8 @@ public interface UserMapper {
     void unlock(@Param("userId") UUID userId);
 
     void updateAvatar(@Param("userId") UUID userId, @Param("avatarUrl") String avatarUrl);
+
+    UUID findUserIdByZitadelUserId(@Param("zitadelUserId") String zitadelUserId);
 
     void updateStatusByZitadelUserId(@Param("zitadelUserId") String zitadelUserId, @Param("status") String status);
 

@@ -1,6 +1,6 @@
 package com.example.server.module.project;
 
-import com.example.server.audit.AuditService;
+import com.example.server.module.audit.AuditService;
 import com.example.server.common.PageRequest;
 import com.example.server.common.PageResponse;
 import com.example.server.common.exception.ForbiddenException;

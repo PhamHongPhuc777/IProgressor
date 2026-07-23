@@ -1,11 +1,14 @@
 package com.example.server.integration.netbird;
 
+import com.example.server.common.exception.ConflictException;
 import com.example.server.module.workspace.department.Department;
 import com.example.server.module.workspace.department.DepartmentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 
 import java.time.Instant;
@@ -46,18 +49,41 @@ public class RealNetBirdClient implements NetBirdClient {
         String groupId = ensureGroup(departmentId);
         Map<String, Object> existing = findUserByEmail(email);
         if (existing == null) {
-            post("/api/users", Map.of(
-                "email", email,
-                "name", fullName,
-                "role", "user",
-                "auto_groups", List.of(groupId)
-            ));
+            inviteUser(email, fullName, groupId);
             return;
         }
         List<String> autoGroups = autoGroupsOf(existing);
         if (!autoGroups.contains(groupId)) {
             autoGroups.add(groupId);
             updateAutoGroups(existing, autoGroups);
+        }
+    }
+
+    /**
+     * NetBird Cloud's platform-level user directory is broader than our own team's `/api/users`
+     * list -- an email can 409 here ("can't invite a user with an existing netbird account") even
+     * when {@link #findUserByEmail} finds nothing in our own team, e.g. if that email already has
+     * an unrelated NetBird identity elsewhere on the platform. Surfaced as a clear, actionable
+     * ConflictException instead of an unhandled 500 -- there's no invite-side workaround; the
+     * email owner has to resolve it on NetBird's end (or the request should use a different email).
+     */
+    private void inviteUser(String email, String fullName, String groupId) {
+        try {
+            post("/api/users", Map.of(
+                "email", email,
+                "name", fullName,
+                "role", "user",
+                "auto_groups", List.of(groupId)
+            ));
+        } catch (HttpClientErrorException e) {
+            if (e.getStatusCode() == HttpStatus.CONFLICT) {
+                throw new ConflictException(
+                    "Cannot invite " + email + " to NetBird: this email already has an existing "
+                        + "NetBird account (possibly unrelated to this app). Ask them to leave/"
+                        + "deactivate that account, or resubmit the access request with a "
+                        + "different email.");
+            }
+            throw e;
         }
     }
 

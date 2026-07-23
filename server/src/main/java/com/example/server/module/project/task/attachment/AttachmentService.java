@@ -1,6 +1,6 @@
 package com.example.server.module.project.task.attachment;
 
-import com.example.server.audit.AuditService;
+import com.example.server.module.audit.AuditService;
 import com.example.server.common.exception.ForbiddenException;
 import com.example.server.common.exception.NotFoundException;
 import com.example.server.integration.storage.DocumentStorageClient;

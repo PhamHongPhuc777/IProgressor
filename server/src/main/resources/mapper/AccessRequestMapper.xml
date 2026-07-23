@@ -35,7 +35,7 @@
     <select id="findByDepartment" resultMap="accessRequestMap">
         SELECT <include refid="columns"/> FROM access_request
         <where>
-            department_id = #{departmentId}
+            <if test="departmentId != null">department_id = #{departmentId}</if>
             <if test="status != null">AND status = #{status}</if>
         </where>
         ORDER BY requested_at DESC
@@ -45,7 +45,7 @@
     <select id="countByDepartment" resultType="long">
         SELECT COUNT(*) FROM access_request
         <where>
-            department_id = #{departmentId}
+            <if test="departmentId != null">department_id = #{departmentId}</if>
             <if test="status != null">AND status = #{status}</if>
         </where>
     </select>
