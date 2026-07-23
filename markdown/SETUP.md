@@ -175,40 +175,71 @@ still deferred -- NetBird's own docs were unclear on whether the self-hosted OSS
 streaming feature applies to Cloud the same way, so `webhook/dto/NetbirdConnectionEventPayload`'s
 shape is still provisional. Revisit once that's confirmed against a real webhook payload.
 
-## SharePoint / Microsoft Graph
+## Google Drive
 
-`RealSharePointStorageClient` uploads task attachments to a single shared SharePoint document
-library via Microsoft Graph, using an **app-only** (client-credentials) grant -- there's no
-signed-in user in this flow, so this is a background-service/daemon app registration in Entra ID,
-not a delegated one.
+`RealGoogleDriveStorageClient` uploads task attachments to a Google Drive folder via Drive API v3,
+authenticating as a **real Google account via an OAuth2 refresh token** -- not a service account.
+Replaces the earlier Microsoft Graph API/SharePoint plan after Entra ID tenant setup hit a hard
+eligibility wall (see PRD.md/SRS.md's 2026-07-23 correction notes).
 
-1. In the [Microsoft Entra admin center](https://entra.microsoft.com), go to **App registrations ->
-   New registration**. No redirect URI is needed (app-only, no interactive sign-in).
-2. Note the **Application (client) ID** and **Directory (tenant) ID** from the app's Overview page
-   -- these are `GRAPH_CLIENT_ID` and `GRAPH_TENANT_ID` below.
-3. Go to **Certificates & secrets -> New client secret**, then copy the secret **value** (not the
-   secret ID) immediately -- like NetBird's PAT, it's only shown once. This is `GRAPH_CLIENT_SECRET`.
-4. Go to **API permissions -> Add a permission -> Microsoft Graph -> Application permissions**, add
-   `Sites.ReadWrite.All`, then click **Grant admin consent** (application permissions always need
-   this, and there's no interactive consent prompt to fall back on since there's no signed-in user).
-5. Find the target SharePoint site's hostname and server-relative path from its URL, e.g.
-   `https://contoso.sharepoint.com/sites/IProgressor` splits into:
-   - `GRAPH_SITE_HOSTNAME` = `contoso.sharepoint.com`
-   - `GRAPH_SITE_PATH` = `sites/IProgressor` (no leading slash)
+A service-account JWT-bearer grant was tried first (matching Zitadel/Graph's app-only pattern),
+but Google rejects it outright: **service accounts have no Drive storage quota of their own**, so
+file creation 403s with `storageQuotaExceeded` even after sharing a folder with the service
+account's email -- confirmed live, not a guess. The fix is real user OAuth delegation instead: a
+one-time manual consent (steps below) yields a refresh token, which the app exchanges for access
+tokens going forward with no further interaction. Files then belong to that real account's own
+quota, so there's no separate "share this folder with a service account" step -- just use a folder
+that account already owns.
+
+**Live-verified end to end** (not just against docs): uploaded a real attachment through
+`POST /tasks/{id}/attachments`, then independently queried the Drive API directly and confirmed the
+`task/{taskId}/` folder tree and file all landed exactly where expected, and that re-uploading
+reuses the existing folders rather than duplicating them.
+
+**Caveat found during that verification:** the token exchange response also includes
+`refresh_token_expires_in` (~7 days, `604800`) -- Google expires refresh tokens after 7 days for
+apps still in "Testing" publish status (Audience tab). Fine for proving the integration works;
+redo the consent step (Playground steps below) to get a new one once it expires, or move the app
+to "Production" later if this needs to keep running unattended (for the full `drive` scope, that
+typically requires Google's app-verification review).
+
+1. Go to the [Google Cloud Console](https://console.cloud.google.com/), create a new project (or
+   reuse one), then **APIs & Services -> Library**, search for **Google Drive API**, and enable it.
+2. Go to **Google Auth Platform** (the Console's current name for what used to be a single "OAuth
+   consent screen" page -- now split into tabs) -> **Branding**, fill in app name/support email, then
+   **Audience** -> choose **External**, and add your own Google account under **Test users** (apps in "Testing"
+   status can only complete consent for accounts explicitly listed here).
+3. Still in **Google Auth Platform**, go to **Clients -> Create client**, type **Web application**.
+   Under **Authorized redirect URIs**, add `https://developers.google.com/oauthplayground` exactly
+   -- this lets [Google's OAuth Playground](https://developers.google.com/oauthplayground) complete
+   the one-time consent step below without writing a callback endpoint of our own for something
+   only ever done once. Save the resulting **Client ID** and **Client secret** -- these are
+   `GOOGLE_DRIVE_CLIENT_ID`/`GOOGLE_DRIVE_CLIENT_SECRET`.
+4. On the [OAuth Playground](https://developers.google.com/oauthplayground), click the gear icon
+   (top right) -> check **Use your own OAuth credentials** -> paste the Client ID/secret from step 3.
+5. In the left panel, find **Drive API v3**, select the `https://www.googleapis.com/auth/drive`
+   scope, click **Authorize APIs**, and sign in/consent with the Google account from step 2 --
+   expect an "unverified app" warning first, click through it (this is normal for a Testing-status
+   app you own).
+6. Click **Exchange authorization code for tokens**. The response includes a `refresh_token` --
+   this is `GOOGLE_DRIVE_REFRESH_TOKEN`. **Copy it as plain text, not a screenshot** -- long tokens
+   mix easily-confused characters (`1`/`l`/`I`, `0`/`O`) and a single misread character breaks
+   authentication with a hard-to-diagnose `invalid_grant` error (hit exactly this live).
+7. Pick or create a folder in that same account's Drive to store attachments in, open it in the
+   browser, and copy its id from the URL: `https://drive.google.com/drive/folders/<this part>` ->
+   `GOOGLE_DRIVE_ROOT_FOLDER_ID`.
 
 | Variable | Value |
 |---|---|
-| `GRAPH_TENANT_ID` | Directory (tenant) ID from step 2 |
-| `GRAPH_CLIENT_ID` | Application (client) ID from step 2 |
-| `GRAPH_CLIENT_SECRET` | the client secret value from step 3 |
-| `GRAPH_SITE_HOSTNAME` | the site's hostname from step 5 |
-| `GRAPH_SITE_PATH` | the site's server-relative path from step 5 |
+| `GOOGLE_DRIVE_CLIENT_ID` | Client ID from step 3 |
+| `GOOGLE_DRIVE_CLIENT_SECRET` | Client secret from step 3 |
+| `GOOGLE_DRIVE_REFRESH_TOKEN` | `refresh_token` from step 6 |
+| `GOOGLE_DRIVE_ROOT_FOLDER_ID` | the folder's id from step 7 |
 
-`RealSharePointStorageClient` is only active on the `prod` profile -- local dev keeps using
-`LocalDocumentStorageClient` (writes to `./uploads`), since this app-only grant isn't worth setting
-up just to run locally. It creates any missing folders under the site's document library on its
-own (one per task, e.g. `task/{taskId}/`), same as `RealNetBirdClient` creates NetBird groups
-on demand -- no folder needs to be created manually.
+`RealGoogleDriveStorageClient` is only active on the `prod` profile -- local dev keeps using
+`LocalDocumentStorageClient` (writes to `./uploads`). It creates any missing folders under the
+root on its own (one per task, e.g. `task/{taskId}/`), same as `RealNetBirdClient` creates NetBird
+groups on demand -- no folder needs to be created manually beyond the one from step 7.
 
 ## Email (SMTP for Zitadel)
 

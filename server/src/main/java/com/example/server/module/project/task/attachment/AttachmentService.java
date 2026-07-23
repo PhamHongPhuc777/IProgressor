@@ -37,7 +37,7 @@ public class AttachmentService {
         StoredFile stored = storageClient.store(file, "task/" + taskId);
         UUID attachmentId = UUID.randomUUID();
         attachmentMapper.insert(attachmentId, taskId, row.projectId(), stored.storageType(),
-            stored.sharepointItemId(), stored.url(), CurrentUser.get().userId());
+            stored.driveItemId(), stored.url(), CurrentUser.get().userId());
         auditService.record("UPLOAD_ATTACHMENT", "ATTACHMENT", attachmentId);
         return attachmentMapper.findById(attachmentId);
     }
@@ -50,6 +50,12 @@ public class AttachmentService {
             || ("Staff".equals(actor.roleName()) && actor.userId().equals(attachment.uploadedBy()));
         if (!allowed) {
             throw new ForbiddenException("Cannot delete this attachment");
+        }
+        // dev/prod share one database but each only has one DocumentStorageClient bean active --
+        // e.g. a GOOGLE_DRIVE row hit from a dev instance can't be deleted from Drive locally, so
+        // skip rather than let LocalDocumentStorageClient misinterpret the URL as a local path.
+        if (attachment.storageType().equals(storageClient.storageType())) {
+            storageClient.delete(new StoredFile(attachment.storageType(), attachment.driveItemId(), attachment.url()));
         }
         attachmentMapper.delete(attachmentId);
         auditService.record("DELETE_ATTACHMENT", "ATTACHMENT", attachmentId);

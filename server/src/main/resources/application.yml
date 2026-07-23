@@ -53,16 +53,16 @@ app:
     # Personal Access Token from NetBird's dashboard (Team -> your user -> Personal Access Tokens).
     api-token: ${NETBIRD_API_TOKEN:}
     webhook-signing-secret: ${NETBIRD_WEBHOOK_SIGNING_SECRET:dev-netbird-webhook-secret}
-  graph:
-    # Entra ID app registration used by RealSharePointStorageClient's client-credentials (app-only)
-    # grant -- see markdown/SETUP.md's "SharePoint / Microsoft Graph" section.
-    tenant-id: ${GRAPH_TENANT_ID:}
-    client-id: ${GRAPH_CLIENT_ID:}
-    client-secret: ${GRAPH_CLIENT_SECRET:}
-    # e.g. "contoso.sharepoint.com"
-    site-hostname: ${GRAPH_SITE_HOSTNAME:}
-    # Server-relative path after the hostname, no leading slash, e.g. "sites/IProgressor".
-    site-path: ${GRAPH_SITE_PATH:}
+  google-drive:
+    # OAuth2 client used by RealGoogleDriveStorageClient's refresh-token grant -- a real Google
+    # account's consent (one-time, manual), not a service account (Google rejects service-account
+    # file creation with storageQuotaExceeded). See markdown/SETUP.md's "Google Drive" section.
+    client-id: ${GOOGLE_DRIVE_CLIENT_ID:}
+    client-secret: ${GOOGLE_DRIVE_CLIENT_SECRET:}
+    refresh-token: ${GOOGLE_DRIVE_REFRESH_TOKEN:}
+    # A folder the consenting account already owns -- id from that folder's URL,
+    # https://drive.google.com/drive/folders/{id}.
+    root-folder-id: ${GOOGLE_DRIVE_ROOT_FOLDER_ID:}
 
 ---
 spring:

@@ -92,7 +92,7 @@ every feature relies on:
 | `config/` | "How is Spring itself wired?" | App startup (security filter chain, CORS, static resources) |
 | `security/` | "Who is calling us, what can they do?" | Every authenticated request, before it reaches a controller |
 | `webhook/` | "An external system is telling us something happened" | Zitadel/NetBird POSTing to us (inbound, no JWT) |
-| `integration/` | "We need to ask an external system to do something" | Mid-request, when a service needs Zitadel/SharePoint (outbound) |
+| `integration/` | "We need to ask an external system to do something" | Mid-request, when a service needs Zitadel/Google Drive (outbound) |
 
 Full breakdown of these was covered in conversation above — the short version: `security/` and
 `webhook/` both handle *incoming* traffic (one from users via JWT, one from external systems via
@@ -112,7 +112,12 @@ security/                    JWT -> local user resolution (see request trace #1 
 security/dev/                Dev-only JWT stub (no Zitadel needed locally)
 
 integration/zitadel/         Outbound: provision a Zitadel identity on access-request approval
-integration/storage/         Outbound: store an attachment (SharePoint stand-in for now)
+integration/storage/         Outbound: store an attachment -- LocalDocumentStorageClient (dev, local
+                              disk) or RealGoogleDriveStorageClient (prod, Google Drive API via a
+                              service account; replaces the earlier Microsoft Graph/SharePoint
+                              client after Entra ID tenant setup hit a hard eligibility wall -- see
+                              SETUP.md's "Google Drive" for real credentials, still pending a live
+                              round-trip test)
 
 webhook/                     Inbound: Zitadel/NetBird push user-lock and connection events to us
 

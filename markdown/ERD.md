@@ -36,7 +36,7 @@ erDiagram
     BROADCAST_MESSAGE ||--o{ NOTIFICATION : "fans out to"
     ZITADEL ||--o{ DEPARTMENT : federates
     ZITADEL ||--o{ USER : authenticates
-    SHAREPOINT ||--o{ ATTACHMENT : stores
+    GOOGLE_DRIVE ||--o{ ATTACHMENT : stores
     NETBIRD ||--o{ USER : "gates access"
     DEPARTMENT ||--o{ ACCESS_REQUEST : receives
     USER ||--o{ ACCESS_REQUEST : reviews
@@ -125,7 +125,7 @@ erDiagram
         uuid task_id FK
         uuid project_id FK
         string storage_type
-        string sharepoint_item_id
+        string drive_item_id
         string url
     }
     TAG {
@@ -170,7 +170,7 @@ erDiagram
     }
 ```
 
-`ZITADEL`, `NETBIRD`, và `SHAREPOINT` là hệ thống bên ngoài (không có schema riêng trong database này) — xem [Hệ thống bên ngoài](#hệ-thống-bên-ngoài) bên dưới.
+`ZITADEL`, `NETBIRD`, và `GOOGLE_DRIVE` là hệ thống bên ngoài (không có schema riêng trong database này) — xem [Hệ thống bên ngoài](#hệ-thống-bên-ngoài) bên dưới.
 
 ## Thực thể & các trường
 
@@ -288,7 +288,7 @@ Trạng thái trước-khi-có-tài-khoản **hoặc** yêu cầu lại sau khi 
 | task_id | uuid | FK → TASK |
 | project_id | uuid | FK → PROJECT |
 | storage_type | string | |
-| sharepoint_item_id | string | |
+| drive_item_id | string | |
 | url | string | |
 
 ### TAG (Thẻ gắn nhãn)
@@ -395,7 +395,9 @@ Dữ liệu khởi tạo — xem [Danh sách seed cho PERMISSION](#danh-sách-se
 |---|---|---|
 | **Zitadel** (self-host) | IAM / SSO | Ánh xạ mỗi DEPARTMENT thành một Zitadel Organization (mô hình multi-tenant theo phòng ban); xác thực USER qua OIDC |
 | **NetBird** (self-host) | VPN quản trị zero-trust | Kiểm soát truy cập tầng mạng cho USER; nguồn định danh liên kết OIDC với Zitadel |
-| **SharePoint** | Lưu trữ tài liệu | Lưu nội dung ATTACHMENT, truy cập qua Microsoft Graph API |
+| **Google Drive** | Lưu trữ tài liệu | Lưu nội dung ATTACHMENT, truy cập qua Google Drive API |
+
+> **Ghi chú (2026-07-23):** Đổi từ Microsoft Graph API/SharePoint sang Google Drive API — Entra ID không có tenant miễn phí/tự đăng ký được ở quy mô dự án này (xem `markdown/SETUP.md`'s "Google Drive"). `attachment.sharepoint_item_id` đã được đổi tên thành `attachment.drive_item_id` và giá trị `storage_type` đổi từ `'SHAREPOINT'` sang `'GOOGLE_DRIVE'` qua `V10__rename_sharepoint_to_drive_item_id.sql`.
 
 ## Khóa/Mở khóa tài khoản
 
@@ -438,7 +440,7 @@ Khóa tài khoản là hành động ở **tầng Zitadel**, không phải flag 
 | `task.comment.create` | Bình luận trên bất kỳ task nào | Tất cả |
 | `task.comment.update` | Sửa bình luận của chính mình (không phải của người khác) | Tất cả |
 | `task.comment.delete` | Xoá bình luận của chính mình (không phải của người khác) | Tất cả |
-| `task.attachment.upload` | Đính kèm file SharePoint (giới hạn tốc độ) | Tất cả |
+| `task.attachment.upload` | Đính kèm file Google Drive (giới hạn tốc độ) | Tất cả |
 | `workspace.members.view` | Xem thành viên workspace của mình | Tất cả |
 | `enterprise.members.view` | Xem thành viên toàn bộ workspace | Leader, Admin |
 | `stats.view.own` | Xem thống kê cá nhân | Staff |

@@ -8,7 +8,7 @@
             <arg column="task_id" javaType="java.util.UUID" name="taskId"/>
             <arg column="project_id" javaType="java.util.UUID" name="projectId"/>
             <arg column="storage_type" javaType="string" name="storageType"/>
-            <arg column="sharepoint_item_id" javaType="string" name="sharepointItemId"/>
+            <arg column="drive_item_id" javaType="string" name="driveItemId"/>
             <arg column="url" javaType="string" name="url"/>
             <arg column="uploaded_by" javaType="java.util.UUID" name="uploadedBy"/>
             <arg column="uploaded_by_name" javaType="string" name="uploadedByName"/>
@@ -17,7 +17,7 @@
     </resultMap>
 
     <sql id="columns">
-        a.attachment_id, a.task_id, a.project_id, a.storage_type, a.sharepoint_item_id, a.url,
+        a.attachment_id, a.task_id, a.project_id, a.storage_type, a.drive_item_id, a.url,
         a.uploaded_by, u.full_name AS uploaded_by_name, a.created_at
     </sql>
 
@@ -37,8 +37,8 @@
     </select>
 
     <insert id="insert">
-        INSERT INTO attachment (attachment_id, task_id, project_id, storage_type, sharepoint_item_id, url, uploaded_by)
-        VALUES (#{attachmentId}, #{taskId}, #{projectId}, #{storageType}, #{sharepointItemId}, #{url}, #{uploadedBy})
+        INSERT INTO attachment (attachment_id, task_id, project_id, storage_type, drive_item_id, url, uploaded_by)
+        VALUES (#{attachmentId}, #{taskId}, #{projectId}, #{storageType}, #{driveItemId}, #{url}, #{uploadedBy})
     </insert>
 
     <delete id="delete">

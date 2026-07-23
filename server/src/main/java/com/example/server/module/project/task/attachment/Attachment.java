@@ -8,7 +8,7 @@ public record Attachment(
     UUID taskId,
     UUID projectId,
     String storageType,
-    String sharepointItemId,
+    String driveItemId,
     String url,
     UUID uploadedBy,
     String uploadedByName,

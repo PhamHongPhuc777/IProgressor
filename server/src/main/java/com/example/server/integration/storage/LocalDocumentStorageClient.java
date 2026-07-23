@@ -29,4 +29,19 @@ public class LocalDocumentStorageClient implements DocumentStorageClient {
             throw new UncheckedIOException("Failed to store file locally", e);
         }
     }
+
+    @Override
+    public void delete(StoredFile storedFile) {
+        try {
+            String filename = storedFile.url().substring("/uploads/".length());
+            Files.deleteIfExists(UPLOAD_DIR.resolve(filename));
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed to delete local file", e);
+        }
+    }
+
+    @Override
+    public String storageType() {
+        return "LOCAL";
+    }
 }

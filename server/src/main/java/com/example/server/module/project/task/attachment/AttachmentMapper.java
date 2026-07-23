@@ -14,7 +14,7 @@ public interface AttachmentMapper {
     Attachment findById(@Param("attachmentId") UUID attachmentId);
 
     void insert(@Param("attachmentId") UUID attachmentId, @Param("taskId") UUID taskId, @Param("projectId") UUID projectId,
-                @Param("storageType") String storageType, @Param("sharepointItemId") String sharepointItemId,
+                @Param("storageType") String storageType, @Param("driveItemId") String driveItemId,
                 @Param("url") String url, @Param("uploadedBy") UUID uploadedBy);
 
     void delete(@Param("attachmentId") UUID attachmentId);

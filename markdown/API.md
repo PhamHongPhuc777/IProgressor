@@ -114,7 +114,7 @@ Hướng đã chốt: **Phương án B** (ma trận chỉnh sửa được bởi
 | GET | `/tasks/{id}/comments` | Danh sách | 1 | 1 | 1 | 1 |
 | POST | `/tasks/{id}/comments` | Tạo mới | 1 | 1 | 1 | 1 |
 | GET | `/tasks/{id}/attachments` | Danh sách | 1 | 1 | 1 | 1 |
-| POST | `/tasks/{id}/attachments` | Tải lên qua SharePoint/Graph API — có giới hạn tốc độ (cấu hình app, không phải schema) | 1 | 1 | 1 | 1 |
+| POST | `/tasks/{id}/attachments` | Tải lên qua Google Drive API — có giới hạn tốc độ (cấu hình app, không phải schema) | 1 | 1 | 1 | 1 |
 | DELETE | `/attachments/{id}` | Xóa — người tải lên hoặc PM/Admin | 1* | 1 | 0 | 1 |
 
 *\*Staff chỉ xóa được tệp do chính mình tải lên.*

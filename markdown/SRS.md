@@ -7,6 +7,8 @@
 > Converted from `Software Requirement Specification - Project Managment Web App.pdf` for repo review/reference. Content is unedited from the source PDF (only reformatted to Markdown), **except for the corrections/additions noted below.**
 >
 > **Addition note (2026-07-22):** FR-5 gained two bullets not in the original PDF -- SMTP for Zitadel's own account-lifecycle emails, and Google (OAuth2) as an added external identity provider option -- reflecting real implementation decisions made after this document was first converted (see `markdown/SETUP.md`'s "Email (SMTP for Zitadel)" section). Marked as an addition, not a correction, since nothing in the original was wrong -- these simply didn't exist yet when the PDF was written.
+>
+> **Correction note (2026-07-23):** 2.2's Microsoft 365/SharePoint infrastructure assumption and FR-2's file-linking integration (Microsoft Graph API/SharePoint) are replaced with Google Drive API/Google Workspace throughout this document. Real Microsoft Entra ID tenant setup hit a hard eligibility wall (no free/self-serve tenant available without an existing qualifying Microsoft 365 subscription or nonprofit/education affiliation), so the file-storage integration moved to Google Drive API instead, which only needs a Google Cloud Console project -- no organizational tenant required. See `markdown/SETUP.md`'s "Google Drive" section.
 
 ## Table of Contents
 
@@ -59,7 +61,7 @@ Công cụ nội bộ (internal tool), không public ra ngoài internet công kh
 
 - Đội phát triển có nền tảng Java (Spring Boot) và JavaScript/React.
 - Giai đoạn MVP triển khai dạng modular monolith.
-- Công ty có hạ tầng Microsoft 365/SharePoint hoặc SharePoint on-premises.
+- Công ty có tài khoản/hạ tầng Google Workspace (hoặc Google account cá nhân đủ dùng cho Google Drive API).
 - Giai đoạn hiện tại là **local development**; các yêu cầu triển khai production sẽ được bổ sung riêng khi dự án chuyển giai đoạn (xem NFR-4).
 
 ## 3. Yêu cầu chức năng
@@ -74,7 +76,7 @@ Công cụ nội bộ (internal tool), không public ra ngoài internet công kh
 
 - Tạo, sửa, xóa (lưu trữ) dự án trong workspace.
 - Lưu thông tin liên quan đến dự án (mô tả, phạm vi, thời gian, tài liệu).
-- Liên kết dữ liệu dự án với hệ thống khác trong công ty qua Microsoft Graph API (SharePoint site/tài liệu) hoặc SharePoint REST API/CSOM nếu dùng bản on-premises.
+- Liên kết dữ liệu dự án với hệ thống lưu trữ file khác qua Google Drive API (Drive file/folder liên kết với dự án).
 
 ### FR-3: Phân rã công việc và phân bổ nguồn lực cho vai trò trưởng phòng
 
