@@ -4,11 +4,13 @@ import { Bell } from 'lucide-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { useMe } from '@/features/workspace'
 import { markNotificationRead } from '../api/notifications'
 import { useNotifications } from '../hooks/useNotifications'
 import { humanizeEntity, timeAgo } from '../utils'
 
 export function NotificationsBell() {
+  const { user } = useMe()
   const { query, unreadCount } = useNotifications()
   const queryClient = useQueryClient()
   const [open, setOpen] = useState(false)
@@ -60,34 +62,40 @@ export function NotificationsBell() {
             </p>
           ) : (
             <ul className="max-h-80 overflow-y-auto">
-              {recent.map((n) => (
-                <li key={n.notificationId}>
-                  <button
-                    type="button"
-                    disabled={n.isRead || markRead.isPending}
-                    onClick={() => markRead.mutate(n.notificationId)}
-                    className={cn(
-                      'flex w-full items-start gap-2 px-3 py-2 text-left text-sm hover:bg-muted/50',
-                      n.isRead && 'opacity-60',
-                    )}
-                  >
-                    <span
+              {recent.map((n) => {
+                // Admin's list includes every user's notifications (matches
+                // "Admin sees all workspaces"), but the backend only allows
+                // marking your own as read -- disable it for others' rows.
+                const isOwn = n.userId === user?.userId
+                return (
+                  <li key={n.notificationId}>
+                    <button
+                      type="button"
+                      disabled={!isOwn || n.isRead || markRead.isPending}
+                      onClick={() => isOwn && markRead.mutate(n.notificationId)}
                       className={cn(
-                        'mt-1.5 size-2 shrink-0 rounded-full',
-                        n.isRead ? 'bg-transparent' : 'bg-primary',
+                        'flex w-full items-start gap-2 px-3 py-2 text-left text-sm hover:bg-muted/50',
+                        n.isRead && 'opacity-60',
                       )}
-                    />
-                    <span className="min-w-0">
-                      <span className="block truncate">
-                        {humanizeEntity(n.entityType)}
+                    >
+                      <span
+                        className={cn(
+                          'mt-1.5 size-2 shrink-0 rounded-full',
+                          n.isRead ? 'bg-transparent' : 'bg-primary',
+                        )}
+                      />
+                      <span className="min-w-0">
+                        <span className="block truncate">
+                          {humanizeEntity(n.entityType)}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {timeAgo(n.createdAt)}
+                        </span>
                       </span>
-                      <span className="text-xs text-muted-foreground">
-                        {timeAgo(n.createdAt)}
-                      </span>
-                    </span>
-                  </button>
-                </li>
-              ))}
+                    </button>
+                  </li>
+                )
+              })}
             </ul>
           )}
           <Link
