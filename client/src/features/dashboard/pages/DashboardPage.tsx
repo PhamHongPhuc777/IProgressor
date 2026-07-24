@@ -1,79 +1,236 @@
 import { useQuery } from '@tanstack/react-query'
+import { Link } from 'react-router-dom'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useSession } from '@/features/auth/hooks/useSession'
-import { useMe } from '@/features/workspace'
-import {
-  getEnterpriseDashboard,
-  getMyDashboard,
-  type DepartmentPerformance,
-} from '../api/dashboard'
+import { getDepartments, getUsers, useMe } from '@/features/workspace'
+import { listAccessRequests } from '@/features/workspace/api/access-requests'
+import { getProjects, type Project } from '@/features/projects'
+import { getEnterpriseDashboard, getMyDashboard, getMyTasks } from '../api/dashboard'
+import { StatCard } from '../components/StatCard'
+import { MyTaskList } from '../components/MyTaskList'
+import { DepartmentPerformanceTable } from '../components/DepartmentPerformanceTable'
 
-function StatCard({ label, value }: { label: string; value: number | string }) {
+const isOverdue = (p: Project) =>
+  !!p.endDate &&
+  new Date(p.endDate) < new Date() &&
+  !['COMPLETED', 'ARCHIVED'].includes(p.status.toUpperCase())
+
+function ProjectListCard({ title, projects }: { title: string; projects: Project[] }) {
   return (
     <Card>
-      <CardContent className="py-4">
-        <div className="text-2xl font-semibold">{value}</div>
-        <div className="text-sm text-muted-foreground">{label}</div>
+      <CardHeader>
+        <CardTitle>{title}</CardTitle>
+      </CardHeader>
+      <CardContent className="p-0">
+        {projects.length === 0 ? (
+          <p className="p-4 text-sm text-muted-foreground">No projects yet.</p>
+        ) : (
+          <ul className="divide-y">
+            {projects.map((p) => (
+              <li key={p.projectId}>
+                <Link
+                  to={`/projects/${p.projectId}`}
+                  className="flex items-center justify-between gap-2 px-4 py-2 text-sm transition-colors hover:bg-muted/40"
+                >
+                  <span className="min-w-0 truncate font-medium">{p.name}</span>
+                  <Badge variant="secondary">{p.status.toLowerCase()}</Badge>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
       </CardContent>
     </Card>
   )
 }
 
-/** completionRate may be a 0–1 fraction or a 0–100 percent; normalize either. */
-function pct(rate: number) {
-  const p = rate <= 1 ? rate * 100 : rate
-  return `${Math.round(p)}%`
+function StaffDashboard() {
+  const stats = useQuery({ queryKey: ['dashboard', 'me'], queryFn: getMyDashboard })
+  const myTasks = useQuery({ queryKey: ['me', 'tasks'], queryFn: getMyTasks })
+
+  if (stats.isPending) return <p className="text-sm text-muted-foreground">Loading…</p>
+  if (stats.isError)
+    return <p className="text-sm text-destructive">Couldn’t load your dashboard.</p>
+
+  return (
+    <>
+      {stats.data.myStats && (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard label="Total assigned" value={stats.data.myStats.assignedTaskCount} />
+          <StatCard label="In progress" value={stats.data.myStats.inProgressTaskCount} />
+          <StatCard label="In review" value={stats.data.myStats.inReviewTaskCount} />
+          <StatCard label="Overdue" value={stats.data.myStats.overdueTaskCount} />
+        </div>
+      )}
+      <Card>
+        <CardHeader>
+          <CardTitle>Your tasks</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {myTasks.isPending ? (
+            <p className="text-sm text-muted-foreground">Loading…</p>
+          ) : myTasks.isError ? (
+            <p className="text-sm text-destructive">Couldn’t load your tasks.</p>
+          ) : (
+            <MyTaskList tasks={myTasks.data} />
+          )}
+        </CardContent>
+      </Card>
+    </>
+  )
 }
 
-function PerformanceTable({ rows }: { rows: DepartmentPerformance[] }) {
+function PmDashboard() {
+  const { user } = useMe()
+  const projects = useQuery({
+    queryKey: ['projects', 'own-department'],
+    queryFn: () => getProjects({ departmentId: user!.departmentId, size: 200 }),
+    enabled: !!user?.departmentId,
+  })
+
+  if (projects.isPending) return <p className="text-sm text-muted-foreground">Loading…</p>
+  if (projects.isError)
+    return <p className="text-sm text-destructive">Couldn’t load your projects.</p>
+
+  const list = projects.data.content
+  const planning = list.filter((p) => p.status.toUpperCase() === 'PLANNING')
+  const active = list.filter((p) => p.status.toUpperCase() === 'ACTIVE')
+  const overdue = list.filter(isOverdue)
+
   return (
-    <div className="overflow-x-auto rounded-lg border">
-      <table className="w-full text-sm">
-        <thead className="border-b bg-muted/40 text-left text-muted-foreground">
-          <tr>
-            <th className="px-3 py-2 font-medium">Department</th>
-            <th className="px-3 py-2 font-medium">Completion</th>
-            <th className="px-3 py-2 font-medium">Overdue</th>
-            <th className="px-3 py-2 font-medium">Tasks</th>
-            <th className="px-3 py-2 font-medium">Health</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((d) => (
-            <tr key={d.departmentId} className="border-b last:border-0">
-              <td className="px-3 py-2 font-medium">{d.departmentName}</td>
-              <td className="px-3 py-2">{pct(d.completionRate)}</td>
-              <td className="px-3 py-2 text-muted-foreground">{d.overdueTasks}</td>
-              <td className="px-3 py-2 text-muted-foreground">
-                {d.completedTasks}/{d.totalTasks}
-              </td>
-              <td className="px-3 py-2">
-                <Badge variant={d.atRisk ? 'destructive' : 'secondary'}>
-                  {d.atRisk ? 'at risk' : 'on track'}
-                </Badge>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard label="Total projects" value={list.length} />
+        <StatCard label="Planning" value={planning.length} />
+        <StatCard label="Active" value={active.length} />
+        <StatCard label="Overdue" value={overdue.length} />
+      </div>
+      <ProjectListCard title="Your department's projects" projects={list} />
+    </>
+  )
+}
+
+function LeaderDashboard() {
+  const { user } = useMe()
+  const own = useQuery({
+    queryKey: ['dashboard', 'me'],
+    queryFn: getMyDashboard,
+  })
+  const enterprise = useQuery({
+    queryKey: ['dashboard', 'enterprise'],
+    queryFn: getEnterpriseDashboard,
+  })
+
+  return (
+    <>
+      {own.data?.departmentPerformance && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Your department</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <DepartmentPerformanceTable rows={[own.data.departmentPerformance]} />
+          </CardContent>
+        </Card>
+      )}
+      <Card>
+        <CardHeader>
+          <CardTitle>All departments</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {enterprise.isPending ? (
+            <p className="text-sm text-muted-foreground">Loading…</p>
+          ) : enterprise.isError ? (
+            <p className="text-sm text-destructive">Couldn’t load department stats.</p>
+          ) : (
+            <DepartmentPerformanceTable
+              rows={enterprise.data.departments.filter(
+                (d) => d.departmentId !== user?.departmentId,
+              )}
+            />
+          )}
+        </CardContent>
+      </Card>
+    </>
+  )
+}
+
+function AdminDashboard() {
+  const departments = useQuery({ queryKey: ['departments'], queryFn: getDepartments })
+  const users = useQuery({
+    queryKey: ['users', 'all'],
+    queryFn: () => getUsers({ size: 500 }),
+  })
+  const pending = useQuery({
+    queryKey: ['access-requests', 'PENDING'],
+    queryFn: () => listAccessRequests({ status: 'PENDING', size: 500 }),
+  })
+  const enterprise = useQuery({ queryKey: ['dashboard', 'enterprise'], queryFn: getEnterpriseDashboard })
+
+  const allUsers = users.data?.content ?? []
+  const onlineCount = allUsers.filter((u) => u.netbirdConnected).length
+  const pendingNew = pending.data?.content.filter((r) => !r.existingUserId).length ?? 0
+  const pendingUnlock = pending.data?.content.filter((r) => !!r.existingUserId).length ?? 0
+
+  return (
+    <>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard label="Total members" value={allUsers.length} />
+        <StatCard label="Online" value={onlineCount} />
+        <StatCard label="Offline" value={allUsers.length - onlineCount} />
+        <StatCard
+          label="Pending requests"
+          value={pending.isPending ? '…' : pendingNew + pendingUnlock}
+        />
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Members &amp; projects by department</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          {departments.isPending || enterprise.isPending ? (
+            <p className="p-4 text-sm text-muted-foreground">Loading…</p>
+          ) : (
+            <table className="w-full text-sm">
+              <thead className="border-b bg-muted/40 text-left text-muted-foreground">
+                <tr>
+                  <th className="px-3 py-2 font-medium">Department</th>
+                  <th className="px-3 py-2 font-medium">Members</th>
+                  <th className="px-3 py-2 font-medium">Projects</th>
+                </tr>
+              </thead>
+              <tbody>
+                {departments.data?.map((d) => {
+                  const perf = enterprise.data?.departments.find(
+                    (e) => e.departmentId === d.departmentId,
+                  )
+                  const memberCount = allUsers.filter(
+                    (u) => u.departmentId === d.departmentId,
+                  ).length
+                  return (
+                    <tr key={d.departmentId} className="border-b last:border-0">
+                      <td className="px-3 py-2 font-medium">{d.name}</td>
+                      <td className="px-3 py-2 text-muted-foreground">{memberCount}</td>
+                      <td className="px-3 py-2 text-muted-foreground">
+                        {perf?.totalProjects ?? '—'}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          )}
+        </CardContent>
+      </Card>
+    </>
   )
 }
 
 export function DashboardPage() {
   const { profile } = useSession()
-  const { can, me } = useMe()
-
-  const my = useQuery({ queryKey: ['dashboard', 'me'], queryFn: getMyDashboard })
-
-  const canEnterprise =
-    me?.roleName?.toLowerCase() === 'admin' || can('performance_risk.view')
-  const enterprise = useQuery({
-    queryKey: ['dashboard', 'enterprise'],
-    queryFn: getEnterpriseDashboard,
-    enabled: canEnterprise,
-  })
+  const { me, isRole } = useMe()
 
   return (
     <div className="flex flex-col gap-6">
@@ -84,102 +241,16 @@ export function DashboardPage() {
         </p>
       </div>
 
-      {my.isPending ? (
+      {!me ? (
         <p className="text-sm text-muted-foreground">Loading…</p>
-      ) : my.isError ? (
-        <p className="text-sm text-destructive">Couldn’t load your dashboard.</p>
+      ) : isRole('staff') ? (
+        <StaffDashboard />
+      ) : isRole('pm') ? (
+        <PmDashboard />
+      ) : isRole('leader') ? (
+        <LeaderDashboard />
       ) : (
-        <>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard label="Active projects" value={my.data.activeProjectCount} />
-            {my.data.myStats && (
-              <>
-                <StatCard
-                  label="Assigned tasks"
-                  value={my.data.myStats.assignedTaskCount}
-                />
-                <StatCard
-                  label="In progress"
-                  value={my.data.myStats.inProgressTaskCount}
-                />
-                <StatCard
-                  label="Completed"
-                  value={my.data.myStats.completedTaskCount}
-                />
-                <StatCard
-                  label="Overdue"
-                  value={my.data.myStats.overdueTaskCount}
-                />
-              </>
-            )}
-          </div>
-
-          {my.data.departmentPerformance && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Department performance</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <PerformanceTable rows={[my.data.departmentPerformance]} />
-              </CardContent>
-            </Card>
-          )}
-
-          {my.data.workload && my.data.workload.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Team workload</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto rounded-lg border">
-                  <table className="w-full text-sm">
-                    <thead className="border-b bg-muted/40 text-left text-muted-foreground">
-                      <tr>
-                        <th className="px-3 py-2 font-medium">Member</th>
-                        <th className="px-3 py-2 font-medium">Active tasks</th>
-                        <th className="px-3 py-2 font-medium">Overdue</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {my.data.workload.map((w) => (
-                        <tr key={w.userId} className="border-b last:border-0">
-                          <td className="px-3 py-2 font-medium">{w.fullName}</td>
-                          <td className="px-3 py-2 text-muted-foreground">
-                            {w.activeTaskCount}
-                          </td>
-                          <td className="px-3 py-2 text-muted-foreground">
-                            {w.overdueTaskCount}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {canEnterprise && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Enterprise overview</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {enterprise.isPending ? (
-                  <p className="text-sm text-muted-foreground">Loading…</p>
-                ) : enterprise.isError ? (
-                  <p className="text-sm text-destructive">
-                    Couldn’t load enterprise stats.
-                  </p>
-                ) : enterprise.data.departments.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No data yet.</p>
-                ) : (
-                  <PerformanceTable rows={enterprise.data.departments} />
-                )}
-              </CardContent>
-            </Card>
-          )}
-        </>
+        <AdminDashboard />
       )}
     </div>
   )

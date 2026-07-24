@@ -1,4 +1,6 @@
-export { WorkspacePage } from './pages/WorkspacePage'
+export { MembersPage } from './pages/MembersPage'
+export { LoginManagementPage } from './pages/LoginManagementPage'
+export { AccessControlMatrixPage } from './pages/AccessControlMatrixPage'
 export { useMe } from './hooks/useMe'
 export { getDepartments, getUsers, getDepartmentMembers } from './api/workspace'
 export type { UserSummary, Department, Role, Permission, MeUser, MeProfile } from './api/workspace'

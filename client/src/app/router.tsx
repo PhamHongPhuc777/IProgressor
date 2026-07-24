@@ -5,8 +5,13 @@ import { RequireAuth } from '@/features/auth'
 import { LoginPage } from '@/features/auth/pages/LoginPage'
 import { CallbackPage } from '@/features/auth/pages/CallbackPage'
 import { RegisterPage } from '@/features/access-requests/pages/RegisterPage'
-import { DashboardPage } from '@/features/dashboard/pages/DashboardPage'
-import { WorkspacePage } from '@/features/workspace'
+import {
+  DashboardPage,
+  StatisticsPage,
+  ResourceAllocationPage,
+  PerformanceRiskPage,
+} from '@/features/dashboard'
+import { MembersPage, LoginManagementPage, AccessControlMatrixPage } from '@/features/workspace'
 import { ProjectsPage, ProjectDetailPage } from '@/features/projects'
 import { NotificationsPage } from '@/features/notifications'
 import { AuditPage } from '@/features/audit'
@@ -30,11 +35,17 @@ export const router = createBrowserRouter([
     ),
     children: [
       { index: true, element: <DashboardPage /> },
-      { path: 'workspace', element: <WorkspacePage /> },
       { path: 'projects', element: <ProjectsPage /> },
       { path: 'projects/:id', element: <ProjectDetailPage /> },
-      { path: 'notifications', element: <NotificationsPage /> },
+      { path: 'workspace', element: <MembersPage /> },
+      { path: 'statistics', element: <StatisticsPage /> },
+      { path: 'resource-allocation', element: <ResourceAllocationPage /> },
+      { path: 'performance-risk', element: <PerformanceRiskPage /> },
+      { path: 'login-management', element: <LoginManagementPage /> },
+      { path: 'access-control-matrix', element: <AccessControlMatrixPage /> },
       { path: 'audit', element: <AuditPage /> },
+      // Not a left-nav tab (per UI.md) — reachable via the header bell's "View all".
+      { path: 'notifications', element: <NotificationsPage /> },
     ],
   },
   { path: '*', element: <Navigate to="/" replace /> },

@@ -2,14 +2,11 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
-import { useMe } from '@/features/workspace'
 import { markNotificationRead } from '../api/notifications'
 import { useNotifications } from '../hooks/useNotifications'
 import { humanizeEntity, timeAgo } from '../utils'
-import { BroadcastForm } from '../components/BroadcastForm'
 
 export function NotificationsPage() {
-  const { can } = useMe()
   const { query } = useNotifications()
   const queryClient = useQueryClient()
 
@@ -25,8 +22,6 @@ export function NotificationsPage() {
         <h1 className="text-2xl font-semibold">Notifications</h1>
         <p className="text-sm text-muted-foreground">Your recent activity.</p>
       </div>
-
-      {can('broadcast_message.send') && <BroadcastForm />}
 
       <Card>
         <CardContent className="p-0">

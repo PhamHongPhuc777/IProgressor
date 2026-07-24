@@ -33,10 +33,18 @@ function formatDate(iso: string) {
   return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString()
 }
 
-export function ApprovalsInbox() {
+export function ApprovalsInbox({
+  typeFilter,
+}: {
+  /** Restrict to unlock (existingUserId set) or new-account requests; also
+   *  locks the status filter to PENDING and hides the dropdown, matching
+   *  UI.md's dedicated "unlock requests" / "pending access requests" lists. */
+  typeFilter?: 'unlock' | 'new'
+} = {}) {
   const { can } = useMe()
   const queryClient = useQueryClient()
   const [status, setStatus] = useState<string>('PENDING')
+  const effectiveStatus = typeFilter ? 'PENDING' : status
 
   const departments = useQuery({
     queryKey: ['departments'],
@@ -50,9 +58,16 @@ export function ApprovalsInbox() {
   }, [departments.data])
 
   const requests = useQuery({
-    queryKey: ['access-requests', status || 'all'],
-    queryFn: () => listAccessRequests({ status: status || undefined, size: 100 }),
+    queryKey: ['access-requests', effectiveStatus || 'all'],
+    queryFn: () => listAccessRequests({ status: effectiveStatus || undefined, size: 100 }),
   })
+  const visibleContent = requests.data?.content.filter((r) =>
+    typeFilter === 'unlock'
+      ? !!r.existingUserId
+      : typeFilter === 'new'
+        ? !r.existingUserId
+        : true,
+  )
 
   const invalidate = () =>
     queryClient.invalidateQueries({ queryKey: ['access-requests'] })
@@ -103,25 +118,28 @@ export function ApprovalsInbox() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-2">
-        <label htmlFor="status-filter" className="text-sm text-muted-foreground">
-          Status
-        </label>
-        <NativeSelect
-          id="status-filter"
-          className="w-40"
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-        >
-          {STATUS_OPTIONS.map((o) => (
-            <option key={o.label} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </NativeSelect>
-        {requests.data && (
+        {!typeFilter && (
+          <>
+            <label htmlFor="status-filter" className="text-sm text-muted-foreground">
+              Status
+            </label>
+            <NativeSelect
+              id="status-filter"
+              className="w-40"
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+            >
+              {STATUS_OPTIONS.map((o) => (
+                <option key={o.label} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </NativeSelect>
+          </>
+        )}
+        {visibleContent && (
           <span className="ml-auto text-sm text-muted-foreground">
-            {requests.data.totalElements} request
-            {requests.data.totalElements === 1 ? '' : 's'}
+            {visibleContent.length} request{visibleContent.length === 1 ? '' : 's'}
           </span>
         )}
       </div>
@@ -139,7 +157,7 @@ export function ApprovalsInbox() {
             Retry
           </button>
         </p>
-      ) : requests.data.content.length === 0 ? (
+      ) : !visibleContent || visibleContent.length === 0 ? (
         <p className="text-sm text-muted-foreground">No requests here.</p>
       ) : (
         <div className="overflow-x-auto rounded-lg border">
@@ -155,7 +173,7 @@ export function ApprovalsInbox() {
               </tr>
             </thead>
             <tbody>
-              {requests.data.content.map((req) => {
+              {visibleContent.map((req) => {
                 const pending = req.status.toUpperCase() === 'PENDING'
                 return (
                   <tr key={req.requestId} className="border-b last:border-0">
