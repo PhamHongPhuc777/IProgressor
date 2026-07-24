@@ -1,6 +1,18 @@
 import { userManager } from '@/lib/auth/oidc'
 import { env } from '@/config/env'
 
+/** The uniform response shape the Spring API wraps every JSON payload in. */
+interface ApiEnvelope {
+  success: boolean
+  data?: unknown
+  error?: { code: string; message: string; details?: unknown[] }
+  timestamp?: string
+}
+
+function isEnvelope(body: unknown): body is ApiEnvelope {
+  return typeof body === 'object' && body !== null && 'success' in body
+}
+
 /** Thrown for any non-2xx response so callers can branch on `.status`. */
 export class ApiError extends Error {
   status: number
@@ -33,20 +45,24 @@ async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   const res = await fetch(`${env.API_BASE_URL}${path}`, { ...init, headers })
 
   if (!res.ok) {
-    let body: unknown
-    try {
-      body = await res.json()
-    } catch {
-      body = undefined
-    }
-    throw new ApiError(res.status, `Request to ${path} failed (${res.status})`, body)
+    const body = await res.json().catch(() => undefined)
+    const message =
+      isEnvelope(body) && body.error?.message
+        ? body.error.message
+        : `Request to ${path} failed (${res.status})`
+    throw new ApiError(res.status, message, body)
   }
 
   if (res.status === 204) return undefined as T
   const contentType = res.headers.get('content-type') ?? ''
-  return (contentType.includes('application/json')
-    ? res.json()
-    : res.text()) as Promise<T>
+  if (!contentType.includes('application/json')) {
+    return (await res.text()) as T
+  }
+
+  // Every JSON payload is wrapped in { success, data, timestamp }; unwrap to
+  // the inner `data` here so feature code works with the bare payload.
+  const json: unknown = await res.json()
+  return (isEnvelope(json) ? (json.data as T) : (json as T))
 }
 
 const toBody = (body?: unknown) =>
