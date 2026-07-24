@@ -8,6 +8,7 @@ import {
   ScrollText,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { ThemeToggle } from '@/components/common/ThemeToggle'
 import { UserMenu } from '@/features/auth/components/UserMenu'
 
 // `ready: false` items render as disabled placeholders until their feature
@@ -17,7 +18,7 @@ const nav = [
   { to: '/projects', label: 'Projects', icon: FolderKanban, ready: false },
   { to: '/tasks', label: 'Tasks', icon: CheckSquare, ready: false },
   { to: '/notifications', label: 'Notifications', icon: Bell, ready: false },
-  { to: '/workspace', label: 'Workspace', icon: Users, ready: false },
+  { to: '/workspace', label: 'Workspace', icon: Users, ready: true },
   { to: '/audit', label: 'Audit', icon: ScrollText, ready: false },
 ] as const
 
@@ -62,7 +63,8 @@ export function AppShell() {
       </aside>
 
       <div className="flex min-w-0 flex-col">
-        <header className="flex h-14 items-center justify-end border-b px-6">
+        <header className="flex h-14 items-center justify-end gap-2 border-b px-6">
+          <ThemeToggle />
           <UserMenu />
         </header>
         <main className="flex-1 p-6">
