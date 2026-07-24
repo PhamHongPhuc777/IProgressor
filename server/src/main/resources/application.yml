@@ -28,6 +28,19 @@ spring:
           # Zitadel org/instance this points to, not in mechanism. No default: startup
           # must fail fast if this isn't configured, rather than silently accept any token.
           issuer-uri: ${ZITADEL_ISSUER_URI:http://localhost:8081}
+
+server:
+  # Network-level VPN enforcement: 0.0.0.0 (all interfaces) by default -- unchanged
+  # behavior. Set SERVER_BIND_ADDRESS to this machine's NetBird-assigned peer IP
+  # (see `netbird status`) to make the API unreachable from outside the NetBird
+  # network entirely -- not just permission-gated, actually un-routable at the OS
+  # level. The public marketing pages (home/about/login/register) and the
+  # permitAll() endpoints they call still need a separately, publicly reachable
+  # deployment if this is turned on -- narrowing this address makes the WHOLE API
+  # VPN-only, including those. Not meant to be combined with a public deployment
+  # of this same instance.
+  address: ${SERVER_BIND_ADDRESS:0.0.0.0}
+
 app:
   admin-bootstrap:
     zitadel-user-id: ${ADMIN_ZITADEL_USER_ID:382124313228673027}
