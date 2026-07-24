@@ -1,3 +1,4 @@
+import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios'
 import { userManager } from '@/lib/auth/oidc'
 import { env } from '@/config/env'
 
@@ -36,64 +37,57 @@ export class ApiError extends Error {
   }
 }
 
-async function authHeaders(): Promise<Record<string, string>> {
+const http: AxiosInstance = axios.create({ baseURL: env.API_BASE_URL })
+
+// Inject the current bearer token on every request (async — reads the OIDC store).
+http.interceptors.request.use(async (config) => {
   const user = await userManager.getUser()
-  return user?.access_token
-    ? { Authorization: `Bearer ${user.access_token}` }
-    : {}
+  if (user?.access_token) {
+    config.headers.set('Authorization', `Bearer ${user.access_token}`)
+  }
+  return config
+})
+
+// The API wraps every JSON payload in { success, data, timestamp }; unwrap to
+// the inner `data` so feature code works with the bare payload.
+function unwrap<T>(data: unknown): T {
+  return (isEnvelope(data) ? (data.data as T) : (data as T))
 }
 
-async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const headers = new Headers(init.headers)
-  for (const [key, value] of Object.entries(await authHeaders())) {
-    headers.set(key, value)
-  }
-  // Let the browser set the multipart boundary for FormData; only JSON bodies
-  // get an explicit content-type.
-  if (
-    init.body != null &&
-    !(init.body instanceof FormData) &&
-    !headers.has('Content-Type')
-  ) {
-    headers.set('Content-Type', 'application/json')
-  }
-
-  const res = await fetch(`${env.API_BASE_URL}${path}`, { ...init, headers })
-
-  if (!res.ok) {
-    const body = await res.json().catch(() => undefined)
+function toApiError(error: unknown): never {
+  if (axios.isAxiosError(error)) {
+    const status = error.response?.status ?? 0
+    const body = error.response?.data
     const message =
       isEnvelope(body) && body.error?.message
         ? body.error.message
-        : `Request to ${path} failed (${res.status})`
-    throw new ApiError(res.status, message, body)
+        : error.message || `Request failed (${status})`
+    throw new ApiError(status, message, body)
   }
-
-  if (res.status === 204) return undefined as T
-  const contentType = res.headers.get('content-type') ?? ''
-  if (!contentType.includes('application/json')) {
-    return (await res.text()) as T
-  }
-
-  // Every JSON payload is wrapped in { success, data, timestamp }; unwrap to
-  // the inner `data` here so feature code works with the bare payload.
-  const json: unknown = await res.json()
-  return (isEnvelope(json) ? (json.data as T) : (json as T))
+  throw error
 }
 
-const toBody = (body?: unknown) =>
-  body != null ? JSON.stringify(body) : undefined
+async function request<T>(config: AxiosRequestConfig): Promise<T> {
+  try {
+    const res = await http.request<unknown>(config)
+    if (res.status === 204) return undefined as T
+    return unwrap<T>(res.data)
+  } catch (error) {
+    toApiError(error)
+  }
+}
 
-/** Typed HTTP verbs used by feature `api/` modules. */
+/** Typed HTTP verbs used by feature `api/` modules. Axios handles FormData
+ *  (multipart boundary) and JSON content-type automatically. */
 export const api = {
-  get: <T>(path: string) => apiFetch<T>(path),
+  get: <T>(path: string) => request<T>({ method: 'GET', url: path }),
   post: <T>(path: string, body?: unknown) =>
-    apiFetch<T>(path, { method: 'POST', body: toBody(body) }),
+    request<T>({ method: 'POST', url: path, data: body }),
   postForm: <T>(path: string, form: FormData) =>
-    apiFetch<T>(path, { method: 'POST', body: form }),
+    request<T>({ method: 'POST', url: path, data: form }),
   put: <T>(path: string, body?: unknown) =>
-    apiFetch<T>(path, { method: 'PUT', body: toBody(body) }),
+    request<T>({ method: 'PUT', url: path, data: body }),
   patch: <T>(path: string, body?: unknown) =>
-    apiFetch<T>(path, { method: 'PATCH', body: toBody(body) }),
-  del: <T>(path: string) => apiFetch<T>(path, { method: 'DELETE' }),
+    request<T>({ method: 'PATCH', url: path, data: body }),
+  del: <T>(path: string) => request<T>({ method: 'DELETE', url: path }),
 }

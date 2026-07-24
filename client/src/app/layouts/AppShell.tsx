@@ -10,6 +10,8 @@ import {
 import { cn } from '@/lib/utils'
 import { ThemeToggle } from '@/components/common/ThemeToggle'
 import { UserMenu } from '@/features/auth/components/UserMenu'
+import { useMe } from '@/features/workspace'
+import { NotificationsBell, useNotificationStream } from '@/features/notifications'
 
 // `ready: false` items render as disabled placeholders until their feature
 // slice ships a route — the structure is visible without dead links.
@@ -17,12 +19,15 @@ const nav = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true, ready: true },
   { to: '/projects', label: 'Projects', icon: FolderKanban, ready: true },
   { to: '/tasks', label: 'Tasks', icon: CheckSquare, ready: false },
-  { to: '/notifications', label: 'Notifications', icon: Bell, ready: false },
+  { to: '/notifications', label: 'Notifications', icon: Bell, ready: true },
   { to: '/workspace', label: 'Workspace', icon: Users, ready: true },
   { to: '/audit', label: 'Audit', icon: ScrollText, ready: false },
 ] as const
 
 export function AppShell() {
+  const { can } = useMe()
+  useNotificationStream(can('notification.receive_realtime'))
+
   return (
     <div className="grid min-h-svh grid-cols-[240px_1fr]">
       <aside className="flex flex-col gap-1 border-r bg-sidebar p-3">
@@ -64,6 +69,7 @@ export function AppShell() {
 
       <div className="flex min-w-0 flex-col">
         <header className="flex h-14 items-center justify-end gap-2 border-b px-6">
+          <NotificationsBell />
           <ThemeToggle />
           <UserMenu />
         </header>
