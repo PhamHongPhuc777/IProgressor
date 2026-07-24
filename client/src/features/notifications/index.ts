@@ -1,4 +1,6 @@
 export { NotificationsPage } from './pages/NotificationsPage'
 export { NotificationsBell } from './components/NotificationsBell'
+export { ForceLogoutDialog } from './components/ForceLogoutDialog'
 export { useNotificationStream } from './hooks/useNotificationStream'
+export { useRoleChangeWatcher } from './hooks/useRoleChangeWatcher'
 export type { Notification } from './api/notifications'

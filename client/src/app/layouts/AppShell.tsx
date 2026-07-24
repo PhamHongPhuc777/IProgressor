@@ -18,7 +18,12 @@ import { ThemeToggle } from '@/components/common/ThemeToggle'
 import { UserSummaryCard } from '@/components/common/UserSummaryCard'
 import { useSession } from '@/features/auth/hooks/useSession'
 import { useMe } from '@/features/workspace'
-import { NotificationsBell, useNotificationStream } from '@/features/notifications'
+import {
+  ForceLogoutDialog,
+  NotificationsBell,
+  useNotificationStream,
+  useRoleChangeWatcher,
+} from '@/features/notifications'
 import { BroadcastButton } from '@/components/common/BroadcastButton'
 
 interface NavItem {
@@ -61,7 +66,8 @@ function navFor(roleName: string): NavItem[] {
 export function AppShell() {
   const { can, me } = useMe()
   const { logout } = useSession()
-  useNotificationStream(can('notification.receive_realtime'))
+  const { triggered: roleChanged, onEvent } = useRoleChangeWatcher()
+  useNotificationStream(can('notification.receive_realtime'), onEvent)
 
   const nav = navFor(me?.roleName ?? '')
 
@@ -105,6 +111,8 @@ export function AppShell() {
           <Outlet />
         </main>
       </div>
+
+      <ForceLogoutDialog open={roleChanged} />
     </div>
   )
 }

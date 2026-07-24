@@ -1,18 +1,43 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { userManager } from '@/lib/auth/oidc'
 import { env } from '@/config/env'
+import type { Notification } from '../api/notifications'
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
+/** Parses one SSE frame's `data:` line(s) into the pushed Notification, or
+ *  null for frames with no data (e.g. keep-alive comments). */
+function parseFrame(frame: string): Notification | null {
+  const dataLines = frame
+    .split('\n')
+    .filter((line) => line.startsWith('data:'))
+    .map((line) => line.slice(5).trimStart())
+  if (dataLines.length === 0) return null
+  try {
+    return JSON.parse(dataLines.join('\n')) as Notification
+  } catch {
+    return null
+  }
+}
+
 /**
  * Subscribes to GET /notifications/stream (SSE) and refreshes the notifications
- * query on each pushed event. Uses fetch-streaming rather than EventSource
- * because the endpoint needs the bearer token (EventSource can't set headers).
- * Reconnects with backoff; the list query's polling covers any gap.
+ * query on each pushed event, optionally calling `onEvent` with the parsed
+ * notification. Uses fetch-streaming rather than EventSource because the
+ * endpoint needs the bearer token (EventSource can't set headers). Reconnects
+ * with backoff; the list query's polling covers any gap.
  */
-export function useNotificationStream(enabled: boolean) {
+export function useNotificationStream(
+  enabled: boolean,
+  onEvent?: (notification: Notification) => void,
+) {
   const queryClient = useQueryClient()
+  // Ref so the long-lived connect() loop always calls the latest onEvent
+  // without needing to reconnect the stream whenever the caller's callback
+  // identity changes (e.g. re-renders as `me` loads).
+  const onEventRef = useRef(onEvent)
+  onEventRef.current = onEvent
 
   useEffect(() => {
     if (!enabled) return
@@ -51,9 +76,10 @@ export function useNotificationStream(enabled: boolean) {
             while ((idx = buffer.indexOf('\n\n')) !== -1) {
               const frame = buffer.slice(0, idx)
               buffer = buffer.slice(idx + 2)
-              // Any data frame is a pushed notification → refresh the list.
-              if (frame.includes('data:')) {
+              const notification = parseFrame(frame)
+              if (notification) {
                 queryClient.invalidateQueries({ queryKey: ['notifications'] })
+                onEventRef.current?.(notification)
               }
             }
           }
