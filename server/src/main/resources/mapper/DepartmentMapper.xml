@@ -29,6 +29,8 @@
             <arg column="overdue_tasks" javaType="_long" name="overdueTasks"/>
             <arg column="completion_rate" javaType="_double" name="completionRate"/>
             <arg column="at_risk" javaType="_boolean" name="atRisk"/>
+            <arg column="total_projects" javaType="_long" name="totalProjects"/>
+            <arg column="overdue_projects" javaType="_long" name="overdueProjects"/>
         </constructor>
     </resultMap>
 
@@ -79,7 +81,11 @@
             CASE WHEN COUNT(t.task_id) = 0 THEN 0
                  ELSE ROUND(COUNT(*) FILTER (WHERE t.status = 'COMPLETED')::numeric / COUNT(t.task_id) * 100, 1)
             END AS completion_rate,
-            (COUNT(*) FILTER (WHERE t.status &lt;&gt; 'COMPLETED' AND t.due_date &lt; CURRENT_DATE) > 0) AS at_risk
+            (COUNT(*) FILTER (WHERE t.status &lt;&gt; 'COMPLETED' AND t.due_date &lt; CURRENT_DATE) > 0) AS at_risk,
+            COUNT(DISTINCT p.project_id) AS total_projects,
+            COUNT(DISTINCT p.project_id) FILTER (
+                WHERE p.status NOT IN ('COMPLETED', 'ARCHIVED') AND p.end_date &lt; CURRENT_DATE
+            ) AS overdue_projects
         FROM department d
         LEFT JOIN project p ON p.department_id = d.department_id
         LEFT JOIN task t ON t.project_id = p.project_id

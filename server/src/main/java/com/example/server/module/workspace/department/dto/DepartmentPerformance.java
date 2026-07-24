@@ -9,6 +9,8 @@ public record DepartmentPerformance(
     long completedTasks,
     long overdueTasks,
     double completionRate,
-    boolean atRisk
+    boolean atRisk,
+    long totalProjects,
+    long overdueProjects
 ) {
 }

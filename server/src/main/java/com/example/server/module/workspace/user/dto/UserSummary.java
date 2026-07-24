@@ -1,5 +1,6 @@
 package com.example.server.module.workspace.user.dto;
 
+import java.time.Instant;
 import java.util.UUID;
 
 public record UserSummary(
@@ -11,6 +12,8 @@ public record UserSummary(
     UUID roleId,
     String roleName,
     String status,
-    String avatarUrl
+    String avatarUrl,
+    boolean netbirdConnected,
+    Instant netbirdLastSeen
 ) {
 }

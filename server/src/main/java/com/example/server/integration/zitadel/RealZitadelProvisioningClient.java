@@ -40,6 +40,13 @@ public class RealZitadelProvisioningClient implements ZitadelProvisioningClient 
         return existingUserId != null ? existingUserId : createHumanUser(orgId, email, fullName);
     }
 
+    @Override
+    public String provisionUserWithPassword(String email, String fullName, UUID departmentId, String password) {
+        String orgId = ensureOrg(departmentId);
+        String existingUserId = findUserIdByEmail(email);
+        return existingUserId != null ? existingUserId : createHumanUserWithPassword(orgId, email, fullName, password);
+    }
+
     @SuppressWarnings("unchecked")
     private String findUserIdByEmail(String email) {
         Map<String, Object> body = Map.of("queries", java.util.List.of(
@@ -94,6 +101,23 @@ public class RealZitadelProvisioningClient implements ZitadelProvisioningClient 
             "organization", Map.of("orgId", orgId),
             "profile", Map.of("givenName", nameParts[0], "familyName", nameParts[1]),
             "email", Map.of("email", email)
+        ));
+        return (String) response.get("userId");
+    }
+
+    /**
+     * Dev/test-only counterpart to {@link #createHumanUser}: unlike that method, both `email` and
+     * `password` are populated (not omitted), so this deliberately selects the opposite branch of
+     * the oneof described there -- the account is created pre-verified with a known password and no
+     * invite email fires.
+     */
+    private String createHumanUserWithPassword(String orgId, String email, String fullName, String password) {
+        String[] nameParts = splitName(fullName);
+        Map<String, Object> response = post("/v2/users/human", Map.of(
+            "organization", Map.of("orgId", orgId),
+            "profile", Map.of("givenName", nameParts[0], "familyName", nameParts[1]),
+            "email", Map.of("email", email, "isVerified", true),
+            "password", Map.of("password", password, "changeRequired", false)
         ));
         return (String) response.get("userId");
     }

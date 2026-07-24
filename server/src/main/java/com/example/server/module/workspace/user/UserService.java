@@ -7,6 +7,7 @@ import com.example.server.common.exception.BadRequestException;
 import com.example.server.common.exception.ForbiddenException;
 import com.example.server.common.exception.NotFoundException;
 import com.example.server.integration.netbird.NetBirdClient;
+import com.example.server.module.message.notification.NotificationService;
 import com.example.server.security.AuthenticatedUser;
 import com.example.server.security.CurrentUser;
 import com.example.server.module.workspace.role.Role;
@@ -17,6 +18,7 @@ import com.example.server.module.workspace.user.dto.NetbirdStatus;
 import com.example.server.module.workspace.user.dto.UserRoleInfo;
 import com.example.server.module.workspace.user.dto.UserSummary;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -31,6 +33,10 @@ public class UserService {
     private final RoleService roleService;
     private final AuditService auditService;
     private final NetBirdClient netBirdClient;
+    // ObjectProvider (not a direct NotificationService field) breaks the cycle: NotificationService
+    // already depends on UserService (department fan-out / admin-role lookups), so a direct
+    // constructor dependency here would deadlock bean creation.
+    private final ObjectProvider<NotificationService> notificationServiceProvider;
 
     public UserSummary getById(UUID userId) {
         AuthenticatedUser actor = CurrentUser.get();
@@ -79,6 +85,10 @@ public class UserService {
 
         userMapper.updateRole(userId, newRole.roleId());
         auditService.record("CHANGE_USER_ROLE", "USER", userId);
+        // Only notify on an actual change -- re-saving the same role shouldn't force a re-login.
+        if (!newRole.name().equals(target.roleName())) {
+            notificationServiceProvider.getObject().notifyUser(userId, "ROLE_CHANGED", newRole.roleId());
+        }
         return userMapper.findSummaryById(userId);
     }
 
