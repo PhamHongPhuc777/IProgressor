@@ -1,4 +1,4 @@
-import { api } from '@/lib/api/client'
+import { api, type Page } from '@/lib/api/client'
 
 // Types mirror the server DTOs (camelCase Jackson output).
 
@@ -36,16 +36,6 @@ export interface MeProfile {
   roleName: string
   departmentName: string | null
   permissions: string[]
-}
-
-/** Server's PageResponse<T>. */
-export interface Page<T> {
-  content: T[]
-  page: number
-  size: number
-  totalElements: number
-  totalPages: number
-  last: boolean
 }
 
 export function getMe() {

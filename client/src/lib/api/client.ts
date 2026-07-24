@@ -13,6 +13,16 @@ function isEnvelope(body: unknown): body is ApiEnvelope {
   return typeof body === 'object' && body !== null && 'success' in body
 }
 
+/** Server pagination wrapper (PageResponse<T>). */
+export interface Page<T> {
+  content: T[]
+  page: number
+  size: number
+  totalElements: number
+  totalPages: number
+  last: boolean
+}
+
 /** Thrown for any non-2xx response so callers can branch on `.status`. */
 export class ApiError extends Error {
   status: number

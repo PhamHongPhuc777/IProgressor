@@ -15,7 +15,7 @@ import { UserMenu } from '@/features/auth/components/UserMenu'
 // slice ships a route — the structure is visible without dead links.
 const nav = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true, ready: true },
-  { to: '/projects', label: 'Projects', icon: FolderKanban, ready: false },
+  { to: '/projects', label: 'Projects', icon: FolderKanban, ready: true },
   { to: '/tasks', label: 'Tasks', icon: CheckSquare, ready: false },
   { to: '/notifications', label: 'Notifications', icon: Bell, ready: false },
   { to: '/workspace', label: 'Workspace', icon: Users, ready: true },

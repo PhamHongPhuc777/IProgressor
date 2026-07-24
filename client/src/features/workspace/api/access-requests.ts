@@ -1,5 +1,4 @@
-import { api } from '@/lib/api/client'
-import type { Page } from './workspace'
+import { api, type Page } from '@/lib/api/client'
 
 /** Admin-side view of an access request (mirrors the server AccessRequest record). */
 export interface AccessRequest {

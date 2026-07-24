@@ -7,6 +7,7 @@ import { CallbackPage } from '@/features/auth/pages/CallbackPage'
 import { RegisterPage } from '@/features/access-requests/pages/RegisterPage'
 import { DashboardPage } from '@/features/dashboard/pages/DashboardPage'
 import { WorkspacePage } from '@/features/workspace'
+import { ProjectsPage, ProjectDetailPage } from '@/features/projects'
 
 export const router = createBrowserRouter([
   // Public routes — no Zitadel session required.
@@ -28,7 +29,9 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <DashboardPage /> },
       { path: 'workspace', element: <WorkspacePage /> },
-      // Future feature routes mount here: projects, tasks, …
+      { path: 'projects', element: <ProjectsPage /> },
+      { path: 'projects/:id', element: <ProjectDetailPage /> },
+      // Future feature routes mount here: tasks, …
     ],
   },
   { path: '*', element: <Navigate to="/" replace /> },
