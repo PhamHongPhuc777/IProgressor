@@ -3,6 +3,7 @@ package com.example.server.module.project.me;
 import com.example.server.common.ApiResponse;
 import com.example.server.module.project.me.dto.MeProfile;
 import com.example.server.module.project.me.dto.MyStats;
+import com.example.server.module.project.me.dto.MyTask;
 import com.example.server.module.project.me.dto.UpdateAvatarRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +13,8 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/me")
@@ -35,5 +38,11 @@ public class MeController {
     @PreAuthorize("hasAuthority('stats.view.own')")
     public ApiResponse<MyStats> stats() {
         return ApiResponse.ok(meService.getStats());
+    }
+
+    @GetMapping("/tasks")
+    @PreAuthorize("hasAuthority('stats.view.own')")
+    public ApiResponse<List<MyTask>> tasks() {
+        return ApiResponse.ok(meService.getMyTasks());
     }
 }
