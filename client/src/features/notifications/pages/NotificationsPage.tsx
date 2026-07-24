@@ -1,16 +1,18 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 import { useMe } from '@/features/workspace'
 import { markNotificationRead } from '../api/notifications'
 import { useNotifications } from '../hooks/useNotifications'
-import { humanizeEntity, timeAgo } from '../utils'
+import { humanizeEntity, notificationLink, timeAgo } from '../utils'
 
 export function NotificationsPage() {
   const { user } = useMe()
   const { query } = useNotifications()
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
 
   const markRead = useMutation({
     mutationFn: (id: string) => markNotificationRead(id),
@@ -44,13 +46,16 @@ export function NotificationsPage() {
                 // "Admin sees all workspaces"), but the backend only allows
                 // marking your own as read.
                 const isOwn = n.userId === user?.userId
+                const link = notificationLink(n.entityType)
                 return (
                   <li
                     key={n.notificationId}
                     className={cn(
                       'flex items-center gap-3 px-4 py-3',
                       n.isRead && 'opacity-60',
+                      link && 'cursor-pointer hover:bg-muted/40',
                     )}
+                    onClick={() => link && navigate(link)}
                   >
                     <span
                       className={cn(
@@ -69,7 +74,10 @@ export function NotificationsPage() {
                         size="sm"
                         variant="ghost"
                         disabled={markRead.isPending}
-                        onClick={() => markRead.mutate(n.notificationId)}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          markRead.mutate(n.notificationId)
+                        }}
                       >
                         Mark read
                       </Button>

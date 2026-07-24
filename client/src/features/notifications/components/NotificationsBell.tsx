@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Bell } from 'lucide-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
@@ -7,12 +7,13 @@ import { cn } from '@/lib/utils'
 import { useMe } from '@/features/workspace'
 import { markNotificationRead } from '../api/notifications'
 import { useNotifications } from '../hooks/useNotifications'
-import { humanizeEntity, timeAgo } from '../utils'
+import { humanizeEntity, notificationLink, timeAgo } from '../utils'
 
 export function NotificationsBell() {
   const { user } = useMe()
   const { query, unreadCount } = useNotifications()
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -65,14 +66,23 @@ export function NotificationsBell() {
               {recent.map((n) => {
                 // Admin's list includes every user's notifications (matches
                 // "Admin sees all workspaces"), but the backend only allows
-                // marking your own as read -- disable it for others' rows.
+                // marking your own as read.
                 const isOwn = n.userId === user?.userId
+                const link = notificationLink(n.entityType)
                 return (
                   <li key={n.notificationId}>
                     <button
                       type="button"
-                      disabled={!isOwn || n.isRead || markRead.isPending}
-                      onClick={() => isOwn && markRead.mutate(n.notificationId)}
+                      // The row itself always stays clickable (for
+                      // navigation) even when there's nothing left to mark
+                      // read — a previous version disabled the whole button
+                      // in that case, which made clicking silently do
+                      // nothing.
+                      onClick={() => {
+                        if (isOwn && !n.isRead) markRead.mutate(n.notificationId)
+                        setOpen(false)
+                        if (link) navigate(link)
+                      }}
                       className={cn(
                         'flex w-full items-start gap-2 px-3 py-2 text-left text-sm hover:bg-muted/50',
                         n.isRead && 'opacity-60',

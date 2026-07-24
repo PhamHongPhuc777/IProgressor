@@ -4,6 +4,18 @@ export function humanizeEntity(entityType: string): string {
   return words.charAt(0).toUpperCase() + words.slice(1)
 }
 
+/** Where clicking a notification should take you — null means "nowhere in
+ *  particular" (e.g. ROLE_CHANGED is already handled by the force-logout
+ *  dialog; BROADCAST_MESSAGE has no dedicated detail view to link to). */
+export function notificationLink(entityType: string): string | null {
+  switch (entityType) {
+    case 'ACCESS_REQUEST':
+      return '/login-management'
+    default:
+      return null
+  }
+}
+
 const DIVISIONS: [number, Intl.RelativeTimeFormatUnit][] = [
   [60, 'seconds'],
   [60, 'minutes'],

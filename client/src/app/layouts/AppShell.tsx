@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { ThemeToggle } from '@/components/common/ThemeToggle'
 import { UserSummaryCard } from '@/components/common/UserSummaryCard'
-import { useSession } from '@/features/auth/hooks/useSession'
+import { IdleWarningDialog, useIdleLogout, useSession } from '@/features/auth'
 import { useMe } from '@/features/workspace'
 import {
   ForceLogoutDialog,
@@ -68,6 +68,7 @@ export function AppShell() {
   const { logout } = useSession()
   const { triggered: roleChanged, onEvent } = useRoleChangeWatcher()
   useNotificationStream(can('notification.receive_realtime'), onEvent)
+  const idle = useIdleLogout()
 
   const nav = navFor(me?.roleName ?? '')
 
@@ -113,6 +114,11 @@ export function AppShell() {
       </div>
 
       <ForceLogoutDialog open={roleChanged} />
+      <IdleWarningDialog
+        open={idle.warning}
+        secondsLeft={idle.secondsLeft}
+        onStayActive={idle.stayActive}
+      />
     </div>
   )
 }
