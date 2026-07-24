@@ -9,6 +9,7 @@ import { DashboardPage } from '@/features/dashboard/pages/DashboardPage'
 import { WorkspacePage } from '@/features/workspace'
 import { ProjectsPage, ProjectDetailPage } from '@/features/projects'
 import { NotificationsPage } from '@/features/notifications'
+import { AuditPage } from '@/features/audit'
 
 export const router = createBrowserRouter([
   // Public routes — no Zitadel session required.
@@ -33,6 +34,7 @@ export const router = createBrowserRouter([
       { path: 'projects', element: <ProjectsPage /> },
       { path: 'projects/:id', element: <ProjectDetailPage /> },
       { path: 'notifications', element: <NotificationsPage /> },
+      { path: 'audit', element: <AuditPage /> },
     ],
   },
   { path: '*', element: <Navigate to="/" replace /> },

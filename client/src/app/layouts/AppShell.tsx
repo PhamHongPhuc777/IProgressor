@@ -21,7 +21,7 @@ const nav = [
   { to: '/tasks', label: 'Tasks', icon: CheckSquare, ready: false },
   { to: '/notifications', label: 'Notifications', icon: Bell, ready: true },
   { to: '/workspace', label: 'Workspace', icon: Users, ready: true },
-  { to: '/audit', label: 'Audit', icon: ScrollText, ready: false },
+  { to: '/audit', label: 'Audit', icon: ScrollText, ready: true },
 ] as const
 
 export function AppShell() {

@@ -90,4 +90,13 @@ export const api = {
   patch: <T>(path: string, body?: unknown) =>
     request<T>({ method: 'PATCH', url: path, data: body }),
   del: <T>(path: string) => request<T>({ method: 'DELETE', url: path }),
+  /** For non-JSON downloads (e.g. CSV export) — returns the raw Blob, unwrapped. */
+  getBlob: async (path: string): Promise<Blob> => {
+    try {
+      const res = await http.get<Blob>(path, { responseType: 'blob' })
+      return res.data
+    } catch (error) {
+      toApiError(error)
+    }
+  },
 }
