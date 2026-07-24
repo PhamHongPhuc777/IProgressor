@@ -1,6 +1,9 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { AppShell } from './layouts/AppShell'
 import { AuthLayout } from './layouts/AuthLayout'
+import { PublicLayout } from './layouts/PublicLayout'
+import { HomePage } from '@/pages/HomePage'
+import { AboutPage } from '@/pages/AboutPage'
 import { RequireAuth } from '@/features/auth'
 import { LoginPage } from '@/features/auth/pages/LoginPage'
 import { CallbackPage } from '@/features/auth/pages/CallbackPage'
@@ -17,7 +20,15 @@ import { NotificationsPage } from '@/features/notifications'
 import { AuditPage } from '@/features/audit'
 
 export const router = createBrowserRouter([
-  // Public routes — no Zitadel session required.
+  // Public marketing pages — no Zitadel session required.
+  {
+    element: <PublicLayout />,
+    children: [
+      { path: '/home', element: <HomePage /> },
+      { path: '/about', element: <AboutPage /> },
+    ],
+  },
+  // Public auth routes — no Zitadel session required.
   {
     element: <AuthLayout />,
     children: [
