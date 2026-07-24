@@ -4,10 +4,14 @@ import com.example.server.integration.zitadel.ZitadelEventsClient;
 import com.example.server.integration.zitadel.ZitadelIdentityEvent;
 import com.example.server.module.workspace.user.UserService;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClientException;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -26,6 +30,7 @@ import java.util.UUID;
 public class ZitadelEventSyncJob {
 
     private static final String ZITADEL_EVENT_ENTITY_TYPE = "ZITADEL_EVENT";
+    private static final Logger log = LoggerFactory.getLogger(ZitadelEventSyncJob.class);
 
     private final AuditMapper auditMapper;
     private final UserService userService;
@@ -40,9 +45,18 @@ public class ZitadelEventSyncJob {
             // only sync going forward from now.
             since = Instant.now();
         }
-        for (ZitadelIdentityEvent event : zitadelEventsClient.fetchIdentityEvents(since)) {
+        List<ZitadelIdentityEvent> events;
+        try {
+            events = zitadelEventsClient.fetchIdentityEvents(since);
+        } catch (RestClientException e) {
+            // Zitadel is self-hosted and may be down (e.g. its Docker container isn't running).
+            // This poll runs every 60s, so log one concise line rather than letting the full stack
+            // trace propagate to the scheduler's error handler on every tick. The next tick retries.
+            log.warn("Skipping Zitadel event sync -- could not reach Zitadel: {}", e.getMessage());
+            return;
+        }
+        for (ZitadelIdentityEvent event : events) {
             UUID actorId = userService.findUserIdByZitadelUserId(event.editorUserId());
-            System.err.println("[ZITADEL_SYNC_DEBUG] editorUserId=" + event.editorUserId() + " resolvedActorId=" + actorId + " eventType=" + event.eventType());
             auditMapper.insertZitadelEvent(actorId, event.eventType(), ZITADEL_EVENT_ENTITY_TYPE,
                 event.creationDate(), event.aggregateId(), event.sequence());
         }

@@ -49,7 +49,6 @@ Zitadel xử lý việc đăng nhập thực tế (luồng redirect OIDC) — đ
 | GET | `/users/{id}/netbird-status` | Trạng thái kết nối đã cache (`USER.netbird_connected`/`netbird_last_seen`) | 0 | 0 | 0 | 1 |
 | GET | `/departments/{id}/resource-allocation` | Xem workload (PRD 5.3, gắn nhãn **S** — cần xác nhận vẫn nằm trong phạm vi) | 0 | 1 | 0 | 0 |
 | GET | `/departments/{id}/performance-risk` | Tổng hợp hiệu suất/rủi ro (SRS FR-4) | 0 | 0 | 1 | 0 |
-| PATCH | `/departments/{id}/settings` | ⚠️ `DEPARTMENT` hiện chưa có trường/bảng lưu cài đặt | 0 | 0 | 0 | 1 |
 
 ---
 
@@ -115,9 +114,11 @@ Hướng đã chốt: **Phương án B** (ma trận chỉnh sửa được bởi
 | POST | `/tasks/{id}/comments` | Tạo mới | 1 | 1 | 1 | 1 |
 | GET | `/tasks/{id}/attachments` | Danh sách | 1 | 1 | 1 | 1 |
 | POST | `/tasks/{id}/attachments` | Tải lên qua Google Drive API — có giới hạn tốc độ (cấu hình app, không phải schema) | 1 | 1 | 1 | 1 |
-| DELETE | `/attachments/{id}` | Xóa — người tải lên hoặc PM/Admin | 1* | 1 | 0 | 1 |
+| DELETE | `/attachments/{id}` | Xóa — người tải lên hoặc PM/Admin. Xóa hẳn file trên storage (Google Drive `prod`, hoặc đĩa local `dev`), không chỉ xóa dòng DB | 1* | 1 | 0 | 1 |
 
 *\*Staff chỉ xóa được tệp do chính mình tải lên.*
+
+**Lưu ý client về `ATTACHMENT`:** `storage_type` cho biết backend lưu file (`GOOGLE_DRIVE` ở `prod`, `LOCAL` ở `dev`), và `url` khác định dạng theo đó — link `drive.google.com/...` cho Google Drive, đường dẫn `/uploads/...` cho local. UI không nên giả định một định dạng URL cố định; hãy hiển thị `url` như một link tải/xem chung.
 
 ---
 
@@ -128,7 +129,7 @@ Hướng đã chốt: **Phương án B** (ma trận chỉnh sửa được bởi
 | GET | `/notifications` | Lịch sử, có phân trang — Staff/PM/Leader chỉ trong workspace mình; Admin thấy **tất cả** workspace (đã xác nhận qua tài liệu UI mapping — hộp thông báo của Admin ghi rõ "mọi workplace") | 1 | 1 | 1 | 1 |
 | GET | `/notifications/stream` | **SSE** (`text/event-stream`) — đẩy thông báo real-time cho tính năng "Has Same Workplace Realtime Notification", đã chốt dùng SSE thay vì WebSocket (chỉ cần đẩy một chiều, hành xử đơn giản hơn qua reverse proxy). Phạm vi giống dòng trên. Client tự động chuyển về polling `/notifications` nếu stream bị ngắt | 1 | 1 | 1 | 1 |
 | PATCH | `/notifications/{id}/read` | Đánh dấu đã đọc | 1 | 1 | 1 | 1 |
-| POST | `/notifications/broadcast` | Thông báo toàn hệ thống do Leader gửi (`BROADCAST_MESSAGE`, phân phối qua `NOTIFICATION`) | 0 | 0 | 1 | 0 |
+| POST | `/notifications/broadcast` | Thông báo toàn hệ thống (`BROADCAST_MESSAGE`, phân phối qua `NOTIFICATION`) — Leader và Admin đều gửi được (quyền `broadcast_message.send` cấp cho cả hai; Admin được bổ sung ở migration `V6`) | 0 | 0 | 1 | 1 |
 
 ---
 
@@ -136,7 +137,7 @@ Hướng đã chốt: **Phương án B** (ma trận chỉnh sửa được bởi
 
 | Method | Path | Mô tả | S | P | L | A |
 |---|---|---|---|---|---|---|
-| GET | `/audit-logs?date=&actor_id=&entity_type=` | Xem nhật ký một ngày. Mặc định là **hôm nay** nếu bỏ trống `date` — đây chính là "reset" mà tài liệu FR mô tả: chỉ là mặc định của giao diện, không phải xóa dữ liệu. Bất kỳ ngày nào trước đó vẫn truy vấn được như bình thường | 0 | 0 | 0 | 1 |
+| GET | `/audit-logs?date=&actor_id=&entity_type=` | Xem nhật ký một ngày. Mặc định là **hôm nay** nếu bỏ trống `date` — đây chính là "reset" mà tài liệu FR mô tả: chỉ là mặc định của giao diện, không phải xóa dữ liệu. Bất kỳ ngày nào trước đó vẫn truy vấn được như bình thường. **Lưu ý client:** ngoài hành động nghiệp vụ của app, nhật ký còn chứa các sự kiện định danh từ Zitadel được đồng bộ định kỳ (`entity_type = "ZITADEL_EVENT"`, ví dụ đăng nhập, đổi mật khẩu) — với các dòng này `actor_id` **có thể là `null`** (editor là hệ thống/tài khoản ngoài org) và `entity_id` là `null`, nên UI phải xử lý được actor/entity rỗng | 0 | 0 | 0 | 1 |
 | GET | `/audit-logs/days` | Danh sách các ngày có dữ liệu, dùng cho bộ chọn ngày | 0 | 0 | 0 | 1 |
 | GET | `/audit-logs/export?date=&format=csv` | Xuất nhật ký của một ngày được chọn — **chỉ CSV** (tài liệu UI mapping bỏ PDF) | 0 | 0 | 0 | 1 |
 
@@ -167,7 +168,7 @@ Hướng đã chốt: **Phương án B** (ma trận chỉnh sửa được bởi
 - **Danh sách seed cho `PERMISSION`** — trước đó chỉ mô tả mơ hồ "~25 dòng, khớp gần đúng với bảng FR". Nay đã liệt kê đầy đủ trong `ERD.md`, mỗi dòng tương ứng một endpoint/năng lực cụ thể, để `ROLE_PERMISSION` có dữ liệu thật để seed.
 
 **Còn mở:**
-- `DEPARTMENT.settings` — cần xác định trước "cài đặt workspace" thực sự gồm những gì rồi mới thêm trường/bảng tương ứng vào `ERD.md`.
+- `DEPARTMENT.settings` — tính năng "cài đặt workspace" bị hoãn hoàn toàn cho tới khi xác định được nội dung cụ thể. Quyền `department.settings.update` (từng seed ở `V2`) đã bị **gỡ bỏ** ở `V11` để không xuất hiện thừa trong `GET /me`; khi nào làm thật thì thêm lại cả quyền + endpoint + trường/bảng cùng lúc.
 
 ---
 
@@ -189,7 +190,7 @@ Hướng đã chốt: **Phương án B** (ma trận chỉnh sửa được bởi
 4. **Nhật ký audit không bao giờ bị xóa** — "reset mỗi ngày" chỉ là mặc định hiển thị hôm nay ở giao diện; xuất file chỉ hỗ trợ CSV.
 5. **Thông báo của Admin bao trùm mọi workspace**, trong khi Staff/PM/Leader chỉ thấy thông báo trong workspace của mình.
 
-**Còn mở, cần quyết định:** chỉ còn một mục — `DEPARTMENT.settings` (cài đặt workspace) chưa có chỗ lưu trong schema vì chưa xác định rõ nội dung cụ thể.
+**Còn mở, cần quyết định:** chỉ còn một mục — `DEPARTMENT.settings` (cài đặt workspace) bị hoãn hoàn toàn (không quyền, không endpoint) cho tới khi xác định rõ nội dung; xem mục "Còn mở" ở trên.
 
 ---
 

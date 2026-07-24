@@ -453,7 +453,7 @@ Khóa tài khoản là hành động ở **tầng Zitadel**, không phải flag 
 | `user.lock_unlock` | Khóa/mở khóa tài khoản | Admin |
 | `user.role.change` | Thăng/giáng chức | Admin |
 | `user.netbird_status.view` | Xem trạng thái NetBird theo user | Admin |
-| `department.settings.update` | Chỉnh cài đặt workspace ⚠️ *(chờ `DEPARTMENT.settings` được định nghĩa)* | Admin |
+| `access_request.manage.all_departments` | Duyệt/từ chối yêu cầu truy cập & mở khóa cho **mọi** phòng ban (không chỉ phòng ban của mình) — cấp cho Admin vì phòng ban riêng của Admin (`Administration`) không bao giờ là phòng ban đích của một yêu cầu thật | Admin |
 | `authority_matrix.manage` | Chỉnh `ROLE_PERMISSION` (trừ dòng Admin) | Admin |
 | `audit_log.view` | Xem nhật ký audit | Admin |
 | `audit_log.export` | Xuất nhật ký audit ra CSV | Admin |
