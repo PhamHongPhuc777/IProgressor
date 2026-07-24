@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { NativeSelect } from '@/components/ui/native-select'
 import { ApiError } from '@/lib/api/client'
+import { getInitials } from '@/lib/utils'
 import {
   changeUserRole,
   getDepartments,
@@ -23,16 +24,6 @@ function StatusBadge({ status }: { status: string }) {
       {status.toLowerCase()}
     </Badge>
   )
-}
-
-function initials(name: string) {
-  return name
-    .split(' ')
-    .map((p) => p[0])
-    .filter(Boolean)
-    .slice(0, 2)
-    .join('')
-    .toUpperCase()
 }
 
 function toastError(error: unknown, fallback: string) {
@@ -193,7 +184,7 @@ export function MembersTable() {
                     <td className="px-3 py-2">
                       <div className="flex items-center gap-2">
                         <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium">
-                          {initials(user.fullName)}
+                          {getInitials(user.fullName)}
                         </span>
                         <div className="min-w-0">
                           <div className="truncate font-medium">

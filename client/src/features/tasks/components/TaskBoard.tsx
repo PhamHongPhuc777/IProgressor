@@ -19,9 +19,11 @@ const PRIORITY_VARIANT: Record<string, 'secondary' | 'outline' | 'destructive'> 
 
 function TaskCard({
   task,
+  subtaskCount,
   onClick,
 }: {
   task: TaskView
+  subtaskCount: number
   onClick: () => void
 }) {
   return (
@@ -35,6 +37,11 @@ function TaskCard({
         <Badge variant={PRIORITY_VARIANT[task.priority.toUpperCase()] ?? 'outline'}>
           {label(task.priority)}
         </Badge>
+        {subtaskCount > 0 && (
+          <span className="text-xs text-muted-foreground">
+            {subtaskCount} subtask{subtaskCount === 1 ? '' : 's'}
+          </span>
+        )}
         {task.dueDate && (
           <span className="text-xs text-muted-foreground">
             due {new Date(task.dueDate).toLocaleDateString()}
@@ -104,8 +111,10 @@ export function TaskBoard({
         ) : (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
             {TASK_STATUSES.map((s) => {
+              // Subtasks render nested inside their parent's dialog, not as their
+              // own Kanban card.
               const column = tasks.data.filter(
-                (t) => t.status.toUpperCase() === s,
+                (t) => t.status.toUpperCase() === s && !t.parentTaskId,
               )
               return (
                 <div key={s} className="flex min-w-0 flex-col gap-2">
@@ -118,6 +127,9 @@ export function TaskBoard({
                       <TaskCard
                         key={t.taskId}
                         task={t}
+                        subtaskCount={
+                          tasks.data.filter((c) => c.parentTaskId === t.taskId).length
+                        }
                         onClick={() => setSelectedId(t.taskId)}
                       />
                     ))}
@@ -133,7 +145,9 @@ export function TaskBoard({
             taskId={selectedId}
             projectId={projectId}
             departmentId={departmentId}
-            onClose={() => setSelectedId(null)}
+            open
+            onOpenChange={(next) => !next && setSelectedId(null)}
+            onSelectTask={setSelectedId}
           />
         )}
       </CardContent>

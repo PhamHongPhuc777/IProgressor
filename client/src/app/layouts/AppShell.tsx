@@ -6,10 +6,13 @@ import {
   Bell,
   Users,
   ScrollText,
+  LogOut,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
 import { ThemeToggle } from '@/components/common/ThemeToggle'
-import { UserMenu } from '@/features/auth/components/UserMenu'
+import { UserSummaryCard } from '@/components/common/UserSummaryCard'
+import { useSession } from '@/features/auth/hooks/useSession'
 import { useMe } from '@/features/workspace'
 import { NotificationsBell, useNotificationStream } from '@/features/notifications'
 
@@ -26,13 +29,14 @@ const nav = [
 
 export function AppShell() {
   const { can } = useMe()
+  const { logout } = useSession()
   useNotificationStream(can('notification.receive_realtime'))
 
   return (
     <div className="grid min-h-svh grid-cols-[240px_1fr]">
-      <aside className="flex flex-col gap-1 border-r bg-sidebar p-3">
+      <aside className="flex flex-col border-r bg-sidebar p-3">
         <div className="px-2 py-3 text-lg font-semibold">IProgressor</div>
-        <nav className="flex flex-col gap-1">
+        <nav className="flex flex-1 flex-col gap-1">
           {nav.map(({ to, label, icon: Icon, ready, ...rest }) =>
             ready ? (
               <NavLink
@@ -65,13 +69,16 @@ export function AppShell() {
             ),
           )}
         </nav>
+        <UserSummaryCard />
       </aside>
 
       <div className="flex min-w-0 flex-col">
         <header className="flex h-14 items-center justify-end gap-2 border-b px-6">
-          <NotificationsBell />
           <ThemeToggle />
-          <UserMenu />
+          <NotificationsBell />
+          <Button variant="ghost" size="icon" aria-label="Sign out" onClick={() => logout()}>
+            <LogOut />
+          </Button>
         </header>
         <main className="flex-1 p-6">
           <Outlet />

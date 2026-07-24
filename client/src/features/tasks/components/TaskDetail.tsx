@@ -1,10 +1,15 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { X } from 'lucide-react'
+import { Plus, Trash2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { NativeSelect } from '@/components/ui/native-select'
 import { Separator } from '@/components/ui/separator'
@@ -15,6 +20,7 @@ import {
   addTaskTag,
   deleteTask,
   getTask,
+  getTasks,
   TASK_STATUSES,
   updateTaskStatus,
 } from '../api/tasks'
@@ -37,16 +43,22 @@ export function TaskDetail({
   taskId,
   projectId,
   departmentId,
-  onClose,
+  open,
+  onOpenChange,
+  onSelectTask,
 }: {
   taskId: string
   projectId: string
   departmentId: string
-  onClose: () => void
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  /** Swaps this same dialog to show a different task — used by the subtask list. */
+  onSelectTask: (taskId: string) => void
 }) {
   const { can } = useMe()
   const queryClient = useQueryClient()
   const [editing, setEditing] = useState(false)
+  const [addingSubtask, setAddingSubtask] = useState(false)
   const [tag, setTag] = useState('')
 
   const canCrud = can('task.crud')
@@ -61,6 +73,12 @@ export function TaskDetail({
     queryFn: () => getMilestones(projectId),
     enabled: !!task.data?.milestoneId,
   })
+  // Same queryKey TaskBoard uses -- reads from cache instantly when the board already fetched it.
+  const allTasks = useQuery({
+    queryKey: ['tasks', projectId],
+    queryFn: () => getTasks(projectId),
+  })
+  const subtasks = allTasks.data?.filter((t) => t.parentTaskId === taskId) ?? []
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ['task', taskId] })
@@ -73,6 +91,11 @@ export function TaskDetail({
     mutationFn: (next: string) => updateTaskStatus(taskId, next),
     onSuccess: invalidate,
     onError: onError('update status'),
+  })
+  const subtaskStatus = useMutation({
+    mutationFn: ({ id, next }: { id: string; next: string }) => updateTaskStatus(id, next),
+    onSuccess: invalidate,
+    onError: onError('update subtask'),
   })
   const tagMutation = useMutation({
     mutationFn: (name: string) => addTaskTag(taskId, name),
@@ -87,9 +110,17 @@ export function TaskDetail({
     onSuccess: () => {
       toast.success('Task deleted.')
       queryClient.invalidateQueries({ queryKey: ['tasks', projectId] })
-      onClose()
+      onOpenChange(false)
     },
     onError: onError('delete task'),
+  })
+  const removeSubtask = useMutation({
+    mutationFn: (id: string) => deleteTask(id),
+    onSuccess: () => {
+      toast.success('Subtask deleted.')
+      invalidate()
+    },
+    onError: onError('delete subtask'),
   })
 
   const milestoneName =
@@ -97,14 +128,12 @@ export function TaskDetail({
     '—'
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-start justify-between gap-2">
-        <CardTitle>{task.data?.title ?? 'Task'}</CardTitle>
-        <Button size="icon-sm" variant="ghost" aria-label="Close" onClick={onClose}>
-          <X />
-        </Button>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-4">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{task.data?.title ?? 'Task'}</DialogTitle>
+        </DialogHeader>
+
         {task.isPending ? (
           <p className="text-sm text-muted-foreground">Loading…</p>
         ) : task.isError ? (
@@ -118,7 +147,7 @@ export function TaskDetail({
             onCancel={() => setEditing(false)}
           />
         ) : (
-          <>
+          <div className="flex flex-col gap-4">
             <div className="flex flex-wrap items-center gap-2">
               {canStatus ? (
                 <NativeSelect
@@ -212,12 +241,90 @@ export function TaskDetail({
             </div>
 
             <Separator />
+
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-medium">Subtasks</h3>
+                {canCrud && !addingSubtask && (
+                  <Button size="sm" variant="outline" onClick={() => setAddingSubtask(true)}>
+                    <Plus /> Add subtask
+                  </Button>
+                )}
+              </div>
+
+              {addingSubtask && (
+                <div className="rounded-lg border p-3">
+                  <TaskForm
+                    projectId={projectId}
+                    departmentId={departmentId}
+                    parentTaskId={taskId}
+                    onDone={() => {
+                      setAddingSubtask(false)
+                      invalidate()
+                    }}
+                    onCancel={() => setAddingSubtask(false)}
+                  />
+                </div>
+              )}
+
+              {subtasks.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No subtasks.</p>
+              ) : (
+                <ul className="flex flex-col divide-y rounded-lg border">
+                  {subtasks.map((s) => {
+                    const completed = s.status.toUpperCase() === 'COMPLETED'
+                    return (
+                      <li key={s.taskId} className="flex items-center gap-2 px-3 py-2">
+                        {!canCrud && canStatus && (
+                          <input
+                            type="checkbox"
+                            className="size-4 shrink-0 accent-primary"
+                            checked={completed}
+                            disabled={subtaskStatus.isPending}
+                            onChange={(e) =>
+                              subtaskStatus.mutate({
+                                id: s.taskId,
+                                next: e.target.checked ? 'COMPLETED' : 'NOT_STARTED',
+                              })
+                            }
+                          />
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => onSelectTask(s.taskId)}
+                          className={`min-w-0 flex-1 truncate text-left text-sm hover:underline ${completed ? 'text-muted-foreground line-through' : ''}`}
+                        >
+                          {s.title}
+                        </button>
+                        <Badge variant="outline">{label(s.status)}</Badge>
+                        {canCrud && (
+                          <Button
+                            size="icon-sm"
+                            variant="ghost"
+                            aria-label="Delete subtask"
+                            disabled={removeSubtask.isPending}
+                            onClick={() => {
+                              if (window.confirm(`Delete subtask “${s.title}”?`))
+                                removeSubtask.mutate(s.taskId)
+                            }}
+                          >
+                            <Trash2 />
+                          </Button>
+                        )}
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
+            </div>
+
+            <Separator />
             <TaskComments taskId={taskId} />
             <Separator />
             <TaskAttachments taskId={taskId} />
-          </>
+          </div>
         )}
-      </CardContent>
-    </Card>
+      </DialogContent>
+    </Dialog>
   )
 }

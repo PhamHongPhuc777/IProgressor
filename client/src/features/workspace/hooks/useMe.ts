@@ -16,7 +16,10 @@ export function useMe() {
   const permissions = query.data?.permissions
   return {
     me: query.data,
+    user: query.data?.user,
     isLoading: query.isPending,
     can: (permission: string) => permissions?.includes(permission) ?? false,
+    isRole: (roleName: string) =>
+      (query.data?.roleName ?? '').toLowerCase() === roleName.toLowerCase(),
   }
 }

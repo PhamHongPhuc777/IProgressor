@@ -30,9 +30,27 @@ export interface UserSummary {
   roleName: string
   status: string
   avatarUrl: string | null
+  netbirdConnected: boolean
+  netbirdLastSeen: string | null
+}
+
+/** Mirrors the server's full User record (ERD-shaped, not the trimmed UserSummary). */
+export interface MeUser {
+  userId: string
+  fullName: string
+  email: string
+  departmentId: string
+  roleId: string
+  zitadelUserId: string
+  status: string
+  lockedReason: string | null
+  avatarUrl: string | null
+  netbirdConnected: boolean
+  netbirdLastSeen: string | null
 }
 
 export interface MeProfile {
+  user: MeUser
   roleName: string
   departmentName: string | null
   permissions: string[]

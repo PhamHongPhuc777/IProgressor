@@ -37,12 +37,15 @@ export function TaskForm({
   projectId,
   departmentId,
   task,
+  parentTaskId,
   onDone,
   onCancel,
 }: {
   projectId: string
   departmentId: string
   task?: TaskView
+  /** Set when creating a subtask; ignored when editing an existing task. */
+  parentTaskId?: string
   onDone: () => void
   onCancel: () => void
 }) {
@@ -93,7 +96,7 @@ export function TaskForm({
       }
       return task
         ? updateTask(task.taskId, payload)
-        : createTask(projectId, payload)
+        : createTask(projectId, { ...payload, parentTaskId })
     },
     onSuccess: () => {
       toast.success(isEdit ? 'Task updated.' : 'Task created.')
