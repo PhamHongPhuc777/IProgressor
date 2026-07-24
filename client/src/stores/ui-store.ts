@@ -2,6 +2,8 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
 export type Theme = 'light' | 'dark'
+export type ProjectsView = 'tiles' | 'list'
+export type TaskView = 'kanban' | 'list' | 'gantt' | 'calendar'
 
 function systemTheme(): Theme {
   return window.matchMedia?.('(prefers-color-scheme: dark)').matches
@@ -20,6 +22,10 @@ interface UiState {
   theme: Theme
   toggleTheme: () => void
   setTheme: (theme: Theme) => void
+  projectsView: ProjectsView
+  setProjectsView: (view: ProjectsView) => void
+  taskView: TaskView
+  setTaskView: (view: TaskView) => void
 }
 
 export const useUiStore = create<UiState>()(
@@ -33,6 +39,10 @@ export const useUiStore = create<UiState>()(
       toggleTheme: () =>
         set((state) => ({ theme: state.theme === 'dark' ? 'light' : 'dark' })),
       setTheme: (theme) => set({ theme }),
+      projectsView: 'list',
+      setProjectsView: (projectsView) => set({ projectsView }),
+      taskView: 'kanban',
+      setTaskView: (taskView) => set({ taskView }),
     }),
     { name: 'iprogressor-ui' },
   ),

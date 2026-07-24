@@ -1,59 +1,18 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Badge } from '@/components/ui/badge'
+import { Kanban, List, CalendarDays, GanttChart } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { ViewToggle } from '@/components/common/ViewToggle'
 import { useMe } from '@/features/workspace'
-import { getTasks, TASK_STATUSES, type TaskView } from '../api/tasks'
+import { useUiStore } from '@/stores/ui-store'
+import { getTasks } from '../api/tasks'
 import { TaskForm } from './TaskForm'
 import { TaskDetail } from './TaskDetail'
-
-const label = (s: string) => s.toLowerCase().replace(/_/g, ' ')
-
-const PRIORITY_VARIANT: Record<string, 'secondary' | 'outline' | 'destructive'> = {
-  LOW: 'outline',
-  MEDIUM: 'secondary',
-  HIGH: 'secondary',
-  URGENT: 'destructive',
-}
-
-function TaskCard({
-  task,
-  subtaskCount,
-  onClick,
-}: {
-  task: TaskView
-  subtaskCount: number
-  onClick: () => void
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex w-full flex-col gap-2 rounded-lg border bg-card p-3 text-left transition-colors hover:bg-muted/40"
-    >
-      <span className="text-sm font-medium">{task.title}</span>
-      <div className="flex flex-wrap items-center gap-1.5">
-        <Badge variant={PRIORITY_VARIANT[task.priority.toUpperCase()] ?? 'outline'}>
-          {label(task.priority)}
-        </Badge>
-        {subtaskCount > 0 && (
-          <span className="text-xs text-muted-foreground">
-            {subtaskCount} subtask{subtaskCount === 1 ? '' : 's'}
-          </span>
-        )}
-        {task.dueDate && (
-          <span className="text-xs text-muted-foreground">
-            due {new Date(task.dueDate).toLocaleDateString()}
-          </span>
-        )}
-      </div>
-      <span className="text-xs text-muted-foreground">
-        {task.assigneeName ?? 'Unassigned'}
-      </span>
-    </button>
-  )
-}
+import { TaskKanbanView } from './TaskKanbanView'
+import { TaskListView } from './TaskListView'
+import { TaskCalendarView } from './TaskCalendarView'
+import { TaskGanttView } from './TaskGanttView'
 
 export function TaskBoard({
   projectId,
@@ -65,21 +24,39 @@ export function TaskBoard({
   const { can } = useMe()
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
+  const taskView = useUiStore((s) => s.taskView)
+  const setTaskView = useUiStore((s) => s.setTaskView)
 
   const tasks = useQuery({
     queryKey: ['tasks', projectId],
     queryFn: () => getTasks(projectId),
   })
 
+  // All 4 views render the same top-level tasks -- subtasks live inside their
+  // parent's TaskDetail dialog, not as independent rows/cards/bars.
+  const topLevel = tasks.data?.filter((t) => !t.parentTaskId) ?? []
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between gap-2">
         <CardTitle>Tasks</CardTitle>
-        {can('task.crud') && !creating && (
-          <Button size="sm" onClick={() => setCreating(true)}>
-            New task
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          <ViewToggle
+            value={taskView}
+            onChange={setTaskView}
+            options={[
+              { value: 'kanban', label: 'Kanban', icon: Kanban },
+              { value: 'list', label: 'List', icon: List },
+              { value: 'calendar', label: 'Calendar', icon: CalendarDays },
+              { value: 'gantt', label: 'Gantt', icon: GanttChart },
+            ]}
+          />
+          {can('task.crud') && !creating && (
+            <Button size="sm" onClick={() => setCreating(true)}>
+              New task
+            </Button>
+          )}
+        </div>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         {creating && (
@@ -108,36 +85,14 @@ export function TaskBoard({
           </p>
         ) : tasks.data.length === 0 ? (
           <p className="text-sm text-muted-foreground">No tasks yet.</p>
+        ) : taskView === 'list' ? (
+          <TaskListView tasks={topLevel} onSelect={setSelectedId} />
+        ) : taskView === 'calendar' ? (
+          <TaskCalendarView tasks={topLevel} onSelect={setSelectedId} />
+        ) : taskView === 'gantt' ? (
+          <TaskGanttView tasks={topLevel} onSelect={setSelectedId} />
         ) : (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
-            {TASK_STATUSES.map((s) => {
-              // Subtasks render nested inside their parent's dialog, not as their
-              // own Kanban card.
-              const column = tasks.data.filter(
-                (t) => t.status.toUpperCase() === s && !t.parentTaskId,
-              )
-              return (
-                <div key={s} className="flex min-w-0 flex-col gap-2">
-                  <div className="flex items-center justify-between px-1 text-xs font-medium text-muted-foreground">
-                    <span>{label(s)}</span>
-                    <span>{column.length}</span>
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    {column.map((t) => (
-                      <TaskCard
-                        key={t.taskId}
-                        task={t}
-                        subtaskCount={
-                          tasks.data.filter((c) => c.parentTaskId === t.taskId).length
-                        }
-                        onClick={() => setSelectedId(t.taskId)}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
+          <TaskKanbanView tasks={tasks.data} onSelect={setSelectedId} />
         )}
 
         {selectedId && (
