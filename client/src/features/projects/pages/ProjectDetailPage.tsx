@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ApiError } from '@/lib/api/client'
 import { useMe } from '@/features/workspace'
+import { MilestonesSection } from '@/features/milestones'
+import { TaskBoard } from '@/features/tasks'
 import { archiveProject, getProject } from '../api/projects'
 import { ProjectForm } from '../components/ProjectForm'
 import { ProjectStatusBadge } from '../components/ProjectStatusBadge'
@@ -118,16 +120,11 @@ export function ProjectDetailPage() {
             </Card>
           )}
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Tasks</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                The task board arrives in the next phase.
-              </p>
-            </CardContent>
-          </Card>
+          <MilestonesSection projectId={project.data.projectId} />
+          <TaskBoard
+            projectId={project.data.projectId}
+            departmentId={project.data.departmentId}
+          />
         </>
       )}
     </div>

@@ -46,6 +46,21 @@ export function getDepartments() {
   return api.get<Department[]>('/departments')
 }
 
+/** Members of one department — accessible to PMs (workspace.members.view), unlike
+ *  the enterprise-wide GET /users, so it backs assignee/owner pickers for them. */
+export function getDepartmentMembers(
+  departmentId: string,
+  params: { page?: number; size?: number } = {},
+) {
+  const q = new URLSearchParams()
+  if (params.page != null) q.set('page', String(params.page))
+  if (params.size != null) q.set('size', String(params.size))
+  const qs = q.toString()
+  return api.get<Page<UserSummary>>(
+    `/departments/${departmentId}/members${qs ? `?${qs}` : ''}`,
+  )
+}
+
 export function getUsers(
   params: { departmentId?: string; page?: number; size?: number } = {},
 ) {

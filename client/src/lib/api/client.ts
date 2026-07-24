@@ -48,7 +48,13 @@ async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   for (const [key, value] of Object.entries(await authHeaders())) {
     headers.set(key, value)
   }
-  if (init.body != null && !headers.has('Content-Type')) {
+  // Let the browser set the multipart boundary for FormData; only JSON bodies
+  // get an explicit content-type.
+  if (
+    init.body != null &&
+    !(init.body instanceof FormData) &&
+    !headers.has('Content-Type')
+  ) {
     headers.set('Content-Type', 'application/json')
   }
 
@@ -83,6 +89,8 @@ export const api = {
   get: <T>(path: string) => apiFetch<T>(path),
   post: <T>(path: string, body?: unknown) =>
     apiFetch<T>(path, { method: 'POST', body: toBody(body) }),
+  postForm: <T>(path: string, form: FormData) =>
+    apiFetch<T>(path, { method: 'POST', body: form }),
   put: <T>(path: string, body?: unknown) =>
     apiFetch<T>(path, { method: 'PUT', body: toBody(body) }),
   patch: <T>(path: string, body?: unknown) =>
